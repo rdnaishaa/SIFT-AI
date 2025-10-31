@@ -6,14 +6,91 @@ const API_BASE_URL = 'http://localhost:8000';
 
 export default function Dashboard() {
   const [profiles, setProfiles] = useState([]);
+  const [favorites, setFavorites] = useState([]);
+  const [historyItems, setHistoryItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [favoritesLoading, setFavoritesLoading] = useState(false);
+  const [historyLoading, setHistoryLoading] = useState(false);
   const [companyInput, setCompanyInput] = useState('');
   const [generating, setGenerating] = useState(false);
   const [activeTab, setActiveTab] = useState('dashboard');
+  // current logged in user (fetched from backend)
+  const [user, setUser] = useState(null);
+  // loading id for viewing a company's detail (used to show per-card loading state)
+  const [viewLoadingId, setViewLoadingId] = useState(null);
 
   useEffect(() => {
     fetchProfiles();
+    fetchCurrentUser();
   }, []);
+
+  // Fetch favorite profiles
+  const fetchFavorites = async () => {
+    setFavoritesLoading(true);
+    try {
+      const token = sessionStorage.getItem('token') || '';
+      const res = await fetch(`${API_BASE_URL}/profile/favorites`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : ''
+        }
+      });
+
+      if (!res.ok) {
+        if (res.status === 401) {
+          setFavorites([]);
+          return;
+        }
+        // If endpoint doesn't exist, fallback to filtering local `profiles` if available
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+
+      const data = await res.json();
+      setFavorites(data);
+    } catch (err) {
+      console.warn('Could not fetch favorites from endpoint; falling back to local filter if available.', err);
+      // Fallback: filter profiles with `is_favorite` flag if backend doesn't support endpoint
+      setFavorites(profiles.filter((p) => p.is_favorite));
+    } finally {
+      setFavoritesLoading(false);
+    }
+  };
+
+  // Fetch history
+  const fetchHistory = async () => {
+    setHistoryLoading(true);
+    try {
+      const token = sessionStorage.getItem('token') || '';
+      const res = await fetch(`${API_BASE_URL}/profile/history`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : ''
+        }
+      });
+
+      if (!res.ok) {
+        if (res.status === 401) {
+          setHistoryItems([]);
+          return;
+        }
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+
+      const data = await res.json();
+      setHistoryItems(data);
+    } catch (err) {
+      console.warn('Could not fetch history from endpoint; falling back to local filter if available.', err);
+      // Fallback: if profiles have `last_viewed_at`, sort by it
+      const fallback = profiles
+        .filter((p) => p.last_viewed_at)
+        .sort((a, b) => new Date(b.last_viewed_at) - new Date(a.last_viewed_at));
+      setHistoryItems(fallback);
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
 
   // Fetch profiles from backend
   const fetchProfiles = async () => {
@@ -47,6 +124,53 @@ export default function Dashboard() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Fetch current logged-in user info from backend
+  const fetchCurrentUser = async () => {
+    try {
+      const token = sessionStorage.getItem('token') || '';
+      if (!token) {
+        setUser({ name: 'Guest', role: '' });
+        return;
+      }
+
+      // NOTE: assuming backend exposes an endpoint at /auth/me that returns the current user
+      const res = await fetch(`${API_BASE_URL}/auth/me`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!res.ok) {
+        if (res.status === 401) {
+          // unauthorized
+          setUser({ name: 'Guest', role: '' });
+          return;
+        }
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+
+      const data = await res.json();
+      // Accept several possible shapes returned by different backends
+      const name = data.name || data.username || data.full_name || data.email || 'User';
+      const role = data.role || data.user_role || '';
+      setUser({ name, role });
+    } catch (err) {
+      console.error('Error fetching current user:', err);
+      setUser({ name: 'Guest', role: '' });
+    }
+  };
+
+  // Logout handler
+  const handleLogout = () => {
+    // Remove stored token and reset user info
+    sessionStorage.removeItem('token');
+    setUser({ name: 'Guest', role: '' });
+    // Optionally redirect to login page if you have one:
+    // window.location.href = '/login';
   };
 
   // Generate new profile
@@ -84,8 +208,14 @@ export default function Dashboard() {
 
   // Navigate to detail page
   const viewDetails = (profileId) => {
-    console.log('Viewing profile:', profileId);
-    // In production: window.location.href = `/detail/${profileId}`;
+    // set loading indicator for this profile card, then navigate (or open modal)
+    setViewLoadingId(profileId);
+    // simulate a small loading delay for UX; in production you'd navigate or fetch detail
+    setTimeout(() => {
+      console.log('Viewing profile:', profileId);
+      // In production: window.location.href = `/detail/${profileId}`;
+      setViewLoadingId(null);
+    }, 700);
   };
 
   // Format relative time
@@ -124,7 +254,7 @@ export default function Dashboard() {
             Dashboard
           </button>
           <button
-            onClick={() => setActiveTab('favorites')}
+            onClick={() => { setActiveTab('favorites'); fetchFavorites(); }}
             className={`w-full text-left px-4 py-3 rounded-lg font-medium transition ${
               activeTab === 'favorites' 
                 ? 'bg-[#5B9FED] text-white' 
@@ -134,7 +264,7 @@ export default function Dashboard() {
             Favorites
           </button>
           <button
-            onClick={() => setActiveTab('history')}
+            onClick={() => { setActiveTab('history'); fetchHistory(); }}
             className={`w-full text-left px-4 py-3 rounded-lg font-medium transition ${
               activeTab === 'history' 
                 ? 'bg-[#5B9FED] text-white' 
@@ -151,7 +281,7 @@ export default function Dashboard() {
             Settings
             <span className="text-xs">...</span>
           </button>
-          <button className="w-full text-left px-4 py-3 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg font-medium transition flex items-center gap-2">
+          <button onClick={handleLogout} className="w-full text-left px-4 py-3 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg font-medium transition flex items-center gap-2">
             Logout
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
@@ -179,8 +309,8 @@ export default function Dashboard() {
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-gray-300 rounded-full"></div>
               <div className="text-right">
-                <div className="text-sm font-medium">Esun</div>
-                <div className="text-xs text-gray-500">Admin</div>
+                <div className="text-sm font-medium">{user ? user.name : 'Guest'}</div>
+                <div className="text-xs text-gray-500">{user && user.role ? user.role : 'User'}</div>
               </div>
               <ChevronDown size={16} className="text-gray-400" />
             </div>
@@ -191,42 +321,52 @@ export default function Dashboard() {
         <div className="flex-1 overflow-auto px-8 py-8">
           {/* Page Title */}
           <div className="mb-8">
-            <h1 className="text-3xl font-bold mb-2">Dashboard</h1>
+            <h1 className="text-3xl font-bold mb-2">
+              {activeTab === 'dashboard' ? 'Dashboard' : activeTab === 'favorites' ? 'Favorites' : 'History'}
+            </h1>
             <p className="text-gray-400 text-sm">
-              Start profiling a company or view your saved prospects.
+              {activeTab === 'dashboard' && 'Start profiling a company or view your saved prospects.'}
+              {activeTab === 'favorites' && 'Your saved favorite prospects.'}
+              {activeTab === 'history' && 'Recently viewed or generated profiles.'}
             </p>
           </div>
 
-          {/* Input Section */}
+          {/* Input Section (only on dashboard) */}
           <div className="bg-[#1A1D21] border border-gray-700 rounded-2xl p-8 mb-10">
-            <label className="block text-sm font-medium mb-4">
-              Enter a company name or Website
-            </label>
-            <div className="flex gap-4">
-              <input
-                type="text"
-                placeholder="Enter here"
-                value={companyInput}
-                onChange={(e) => setCompanyInput(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleGenerateProfile()}
-                disabled={generating}
-                className="flex-1 bg-[#2A2D33] border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 outline-none focus:border-[#5B9FED] transition disabled:opacity-50"
-              />
-              <button
-                onClick={handleGenerateProfile}
-                disabled={generating || !companyInput.trim()}
-                className="bg-[#5B9FED] hover:bg-[#4A8DD9] px-8 py-3 rounded-lg font-medium transition disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
-              >
-                {generating ? 'Generating...' : 'Generate Profile'}
-              </button>
-            </div>
+            {activeTab === 'dashboard' ? (
+              <>
+                <label className="block text-sm font-medium mb-4">Enter a company name or Website</label>
+                <div className="flex gap-4">
+                  <input
+                    type="text"
+                    placeholder="Enter here"
+                    value={companyInput}
+                    onChange={(e) => setCompanyInput(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && handleGenerateProfile()}
+                    disabled={generating}
+                    className="flex-1 bg-[#2A2D33] border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 outline-none focus:border-[#5B9FED] transition disabled:opacity-50"
+                  />
+                  <button
+                    onClick={handleGenerateProfile}
+                    disabled={generating || !companyInput.trim()}
+                    className="bg-[#5B9FED] hover:bg-[#4A8DD9] px-8 py-3 rounded-lg font-medium transition disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                  >
+                    {generating ? 'Generating...' : 'Generate Profile'}
+                  </button>
+                </div>
+              </>
+            ) : (
+              <div className="text-sm text-gray-400">Use the Dashboard to generate new profiles.</div>
+            )}
           </div>
 
-          {/* Recent Prospects */}
+          {/* Listing Area (Dashboard / Favorites / History) */}
           <div>
-            <h2 className="text-xl font-bold mb-6">Recent Prospects</h2>
-
-            {loading && (
+            {(
+              (activeTab === 'dashboard' && loading) ||
+              (activeTab === 'favorites' && favoritesLoading) ||
+              (activeTab === 'history' && historyLoading)
+            ) && (
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {[1, 2, 3].map((i) => (
                   <div key={i} className="bg-[#1A1D21] border border-gray-700 rounded-2xl p-6 animate-pulse">
@@ -245,56 +385,54 @@ export default function Dashboard() {
               </div>
             )}
 
-            {!loading && profiles.length === 0 && (
-              <div className="text-center py-20">
-                <div className="text-gray-500 mb-4">No profiles yet</div>
-                <p className="text-gray-600 text-sm">
-                  Start by generating your first company profile above
-                </p>
-              </div>
-            )}
-
-            {!loading && profiles.length > 0 && (
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {profiles.slice(0, 6).map((profile) => (
-                  <div
-                    key={profile.id}
-                    className="bg-[#1A1D21] border border-gray-700 rounded-2xl p-6 hover:border-[#5B9FED] transition-all"
-                  >
-                    {/* Logo */}
-                    <div className="flex justify-center mb-4">
-                      <div className="w-16 h-16 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center">
-                        <span className="text-2xl font-bold text-white">
-                          {profile.company_name.charAt(0).toUpperCase()}
-                        </span>
-                      </div>
+            {!((activeTab === 'dashboard' && loading) || (activeTab === 'favorites' && favoritesLoading) || (activeTab === 'history' && historyLoading)) && (
+              (() => {
+                const items = activeTab === 'dashboard' ? profiles : activeTab === 'favorites' ? favorites : historyItems;
+                if (!items || items.length === 0) {
+                  return (
+                    <div className="text-center py-20">
+                      <div className="text-gray-500 mb-4">No items found</div>
+                      <p className="text-gray-600 text-sm">
+                        {activeTab === 'dashboard' && 'Start by generating your first company profile above'}
+                        {activeTab === 'favorites' && 'You have not favorited any prospects yet.'}
+                        {activeTab === 'history' && 'No recent activity yet.'}
+                      </p>
                     </div>
+                  );
+                }
 
-                    {/* Company Name */}
-                    <h3 className="text-center text-lg font-semibold mb-1">
-                      {profile.company_name}
-                    </h3>
+                return (
+                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {items.slice(0, 6).map((profile) => (
+                      <div
+                        key={profile.id}
+                        className="bg-[#1A1D21] border border-gray-700 rounded-2xl p-6 hover:border-[#5B9FED] transition-all"
+                      >
+                        <div className="flex justify-center mb-4">
+                          <div className="w-16 h-16 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center">
+                            <span className="text-2xl font-bold text-white">
+                              {profile.company_name ? profile.company_name.charAt(0).toUpperCase() : 'U'}
+                            </span>
+                          </div>
+                        </div>
 
-                    {/* Date */}
-                    <p className="text-center text-xs text-gray-500 mb-4">
-                      Created: {formatRelativeTime(profile.created_at)}
-                    </p>
+                        <h3 className="text-center text-lg font-semibold mb-1">{profile.company_name}</h3>
 
-                    {/* Summary */}
-                    <p className="text-sm text-gray-400 mb-5 line-clamp-2 text-center">
-                      {profile.summary || 'Large tech company investing in microservices. Strong signals for cloud & devops needs.'}
-                    </p>
+                        <p className="text-center text-xs text-gray-500 mb-4">{profile.created_at ? `Created: ${formatRelativeTime(profile.created_at)}` : ''}</p>
 
-                    {/* View Details Button */}
-                    <button
-                      onClick={() => viewDetails(profile.id)}
-                      className="w-full bg-[#4A5568] hover:bg-[#5A6578] text-white px-4 py-2.5 rounded-lg font-medium transition flex items-center justify-center gap-2"
-                    >
-                      View Details →
-                    </button>
+                        <p className="text-sm text-gray-400 mb-5 line-clamp-2 text-center">{profile.summary || 'No summary available.'}</p>
+
+                        <button
+                          onClick={() => viewDetails(profile.id)}
+                          className="w-full bg-[#4A5568] hover:bg-[#5A6578] text-white px-4 py-2.5 rounded-lg font-medium transition flex items-center justify-center gap-2"
+                        >
+                          View Details →
+                        </button>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
+                );
+              })()
             )}
           </div>
         </div>
