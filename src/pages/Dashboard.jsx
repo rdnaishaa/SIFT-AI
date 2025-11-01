@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Search, ChevronDown } from 'lucide-react';
+import { getCurrentUser, logoutUser } from '../services/auth';
 
 // Configure API base URL - adjust to your backend URL
 const API_BASE_URL = 'http://localhost:8000';
@@ -206,16 +208,16 @@ export default function Dashboard() {
     }
   };
 
+  const navigate = useNavigate();
+
   // Navigate to detail page
-  const viewDetails = (profileId) => {
-    // set loading indicator for this profile card, then navigate (or open modal)
-    setViewLoadingId(profileId);
-    // simulate a small loading delay for UX; in production you'd navigate or fetch detail
-    setTimeout(() => {
-      console.log('Viewing profile:', profileId);
-      // In production: window.location.href = `/detail/${profileId}`;
-      setViewLoadingId(null);
-    }, 700);
+  const viewDetails = (profile) => {
+    setViewLoadingId(profile.id);
+    // Bisa menggunakan company_name atau id atau parameter lain yang diinginkan
+    const urlParam = profile.company_name 
+      ? encodeURIComponent(profile.company_name.toLowerCase().replace(/ /g, '-'))
+      : profile.id;
+    navigate(`/detail/${urlParam}`);
   };
 
   // Format relative time
@@ -238,7 +240,8 @@ export default function Dashboard() {
       <aside className="w-48 bg-[#1A1D21] border-r border-gray-800 flex flex-col">
         {/* Logo */}
         <div className="p-6 border-b border-gray-800">
-          <div className="text-3xl font-bold">SI⚡T</div>
+          {/* Use public/SIFT no BG.png — public files are served from root */}
+          <img src="/SIFT%20no%20BG.png" alt="SIFT" className="w-24 h-auto" />
         </div>
 
         {/* Navigation */}
@@ -423,10 +426,23 @@ export default function Dashboard() {
                         <p className="text-sm text-gray-400 mb-5 line-clamp-2 text-center">{profile.summary || 'No summary available.'}</p>
 
                         <button
-                          onClick={() => viewDetails(profile.id)}
-                          className="w-full bg-[#4A5568] hover:bg-[#5A6578] text-white px-4 py-2.5 rounded-lg font-medium transition flex items-center justify-center gap-2"
+                          onClick={() => viewDetails(profile)}
+                          disabled={viewLoadingId === profile.id}
+                          className={`w-full px-4 py-2.5 rounded-lg font-medium transition flex items-center justify-center gap-2 ${
+                            viewLoadingId === profile.id ? 'bg-gray-600 cursor-not-allowed' : 'bg-[#4A5568] hover:bg-[#5A6578]'
+                          } text-white`}
                         >
-                          View Details →
+                          {viewLoadingId === profile.id ? (
+                            <>
+                              <svg className="animate-spin w-4 h-4 mr-2 text-white" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                              </svg>
+                              Loading...
+                            </>
+                          ) : (
+                            'View Details →'
+                          )}
                         </button>
                       </div>
                     ))}
