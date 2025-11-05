@@ -153,20 +153,20 @@ export default function LandingPage() {
                 </div>
               </div>
 
-               <div className="max-w-4xl">
-            <h1 className="text-7xl font-bold mb-3 tracking-tight text-white">
-              The Easiest Way<br />
-              to Turn Data<br />
-              into Deals.
-            </h1>
-            <p className="text-gray-300 text-lg mb-3 mx-auto max-w-xl">
-              Stop doing manual research. SIFT leverages agentic AI to instantly generate rich, actionable client profiles—turning hours of work into personalized sales strategies
-            </p>
-            <button 
-              onClick={handleLoginClick}
-              className="bg-white hover:bg-[#73B2FF] text-black hover:text-white px-8 py-3 rounded-lg inline-flex items-center gap-2 transition"
-            >
-              Start Now! <ArrowRight size={20} />
+              <div className="max-w-4xl">
+                <h1 className="text-7xl font-bold mb-3 tracking-tight text-white">
+                  The Easiest Way<br />
+                  to Turn Data<br />
+                  into Deals.
+                </h1>
+                <p className="text-gray-300 text-lg mb-3 mx-auto max-w-xl">
+                  Stop doing manual research. SIFT leverages agentic AI to instantly generate rich, actionable client profiles—turning hours of work into personalized sales strategies
+                </p>
+                <button 
+                  onClick={handleLoginClick}
+                  className="bg-white hover:bg-[#73B2FF] text-black hover:text-white px-8 py-3 rounded-lg inline-flex items-center gap-2 transition relative"
+                >
+                  Start Now! <ArrowRight size={20} />
                 </button>
               </div>
             </div>
@@ -307,7 +307,6 @@ export default function LandingPage() {
            <p className="text-xs text-gray-400 mt-1 font-medium tracking-wider">User Profiling Agents.AI</p>
           </div>
 
-       {/* Tombol CTA */}
        <button 
         onClick={handleLoginClick}
         className="bg-[#73B2FF] hover:bg-[#5A9DE6] px-10 py-4 rounded-lg flex items-center gap-2 mx-auto text-lg transition text-white"
