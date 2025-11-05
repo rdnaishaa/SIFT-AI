@@ -1,8 +1,72 @@
 import React from 'react';
 import { ArrowRight, FileText, Database, TrendingUp } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { Marquee } from '../ui/marquee';
+import { cn } from '../lib/utils';
+import GlareHover from '../ui/GlareHover';
+
+const ReviewCard = ({ img, name, username, body }) => {
+  return (
+    <figure
+      className={cn(
+        "relative w-96 cursor-pointer overflow-hidden rounded-xl border p-6 mb-6",
+        "border-gray-800 bg-[#393D41] hover:bg-[#393D41]/90",
+        "backdrop-blur-sm shadow-lg"
+      )}
+    >
+      <blockquote className="text-sm text-gray-300 leading-relaxed mb-4">{body}</blockquote>
+      <div className="flex flex-row items-center gap-3">
+        <img className="rounded-full w-10 h-10" alt={name} src={img} />
+        <div className="flex flex-col">
+          <figcaption className="text-sm font-medium text-white">
+            {name}
+          </figcaption>
+          <p className="text-xs font-medium text-gray-400">{username}</p>
+        </div>
+      </div>
+    </figure>
+  );
+};
 
 export default function LandingPage() {
+  const reviews = [
+  {
+    name: "Risa Kurnia",
+    username: "@risakur",
+    body: "We managed to close two major deals last month that were previously stalled. The secret? SIFT provided the exact buying signals and key contacts. This real-time information drastically shortened our sales cycle. 'Data into Deals' is not just a slogan—it's reality.",
+    img: "https://avatar.vercel.sh/risa"
+  },
+  {
+    name: "Citra Ayu",
+    username: "@cityou",
+    body: "Before SIFT, my team spent hours on basic research. Now, all the AI-generated client profiles are automated and comprehensive within minutes. We've saved over 60% of our prospecting time. This isn't just an app, it's a direct shortcut to a more efficient pipeline",
+    img: "https://avatar.vercel.sh/citra"
+  },
+  {
+    name: "Maya Larasati",
+    username: "@maylars",
+    body: "The data SIFT generates is incredibly deep. We don't just know who our clients are, but the specific technologies they use. This tech stack insight makes our pitches 100% more relevant and allows us to hit their pain points directly. A true game-changer",
+    img: "https://avatar.vercel.sh/maya"
+  },
+  {
+    name: "Esun",
+    username: "@esuuun",
+    body: "SIFT allowed my marketing team to move from mass campaigns to a high level of personalization. With rich data, we can create signals and key contacts. This real-time information drastically shortened our sales cycle. Much higher response and engagement rates",
+    img: "https://avatar.vercel.sh/esun"
+  },
+  {
+    name: "Firman",
+    username: "@pearman",
+    body: "We use SIFT to validate and expand our target market across Indonesia. Its powerful search and filter capabilities help us pinpoint companies with the exact risk profile and budget we need. A truly valuable investment for our long-term strategy",
+    img: "https://avatar.vercel.sh/firman"
+  },
+  {
+    name: "Santi Dewi",
+    username: "@sntidw",
+    body: "SIFT's interface is so clean and intuitive. All the AI-generated client profiles are automated and comprehensive within minutes. Everything I need is right on the dashboard.",
+    img: "https://avatar.vercel.sh/santi"
+  }];
+
   const navigate = useNavigate();
 
   const handleLoginClick = () => {
@@ -12,89 +76,151 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen text-white">
       {/* Hero Section with Gradient */}
-      <div className="bg-gradient-to-b from-[#1B201A] via-[#73B2FF] to-[#1B201A]">
-      {/* Navigation */}
-      <nav className="flex justify-between items-center px-8 py-6">
-        <img src='public\SIFT no BG.png' className='h-20'/>
-        <div className="flex gap-8 text-xl items-center">
-          <a href="#" className="hover:text-blue-400 transition">About</a>
-          <a href="#" className="hover:text-blue-400 transition">Features</a>
-          <a href="#" className="hover:text-blue-400 transition">Contact</a>
-          <button 
-            onClick={handleLoginClick}
-            className="bg-white text-gray-900 px-6 py-2 rounded-lg hover:bg-gray-100 transition"
-          >
-            Login
-          </button>
+      <div className="relative min-h-screen overflow-hidden">
+        {/* Background Gradient Image */}
+        <div className="absolute inset-0 bg-[#1a2332]">
+          <img 
+            src="/src/assets/gradient.png" 
+            alt="background" 
+            className="w-full h-full object-fill  opacity-100"
+          />
         </div>
-      </nav>
 
-      {/* Hero Section */}
-      <section className="container mx-auto px-8 py-20 text-center">
-        <h1 className="text-6xl font-bold mb-6 leading-tight">
-          The Easiest Way<br />
-          to Turn Data<br />
-          into Deals.
-        </h1>
-        <p className="text-gray-300 text-lg mb-8 max-w-2xl mx-auto">
-          Stop doing manual research. SIFT leverages agentic AI to instantly generate rich, actionable client profiles—turning hours of work into personalized sales strategies
-        </p>
-        <button 
-          onClick={handleLoginClick}
-          className="bg-white hover:bg-[#73B2FF] text-black hover:text-white px-8 py-3 rounded-lg flex items-center gap-2 mx-auto transition border border-gray-300"
-        >
-          Get Started <ArrowRight size={20} />
-        </button>
-      </section>
+        {/* Navigation */}
+        <nav className="relative z-10 flex justify-between items-center px-8 py-6">
+          <img src='/SIFT no BG.png' alt="SIFT Logo" className='h-20'/>
+          <div className="flex gap-8 text-xl items-center">
+            <a href="#about" className="text-white hover:text-[#73B2FF] transition">About</a>
+            <a href="#features" className="text-white hover:text-[#73B2FF] transition">Features</a>
+            <a href="#contact" className="text-white hover:text-[#73B2FF] transition">Contact</a>
+            <button 
+              onClick={handleLoginClick}
+              className="bg-white text-gray-900 px-6 py-2 rounded-lg hover:bg-gray-100 transition"
+            >
+              Login
+            </button>
+          </div>
+        </nav>
+
+        {/* Hero Section */}
+        <section className="relative z-10 container mx-auto px-8  pb-32 text-center flex items-center justify-center min-h-[calc(100vh-120px)]">
+          <div className="max-w-4xl">
+            <div className="relative">
+              {/* Decorative Shapes Container */}
+              <div className="absolute inset-0 w-full">
+                {/* Triangle SVG on the right */}
+                <div className="absolute -right-20 -top-20 z-0">
+                  <GlareHover
+                    width="200px"
+                    height="200px"
+                    background="transparent"
+                    borderRadius="0"
+                    borderColor="transparent"
+                    glareColor="#73B2FF"
+                    glareOpacity={0.3}
+                    glareAngle={-30}
+                    glareSize={300}
+                    transitionDuration={800}
+                  >
+                    <img 
+                      src="/src/assets/triangle.svg" 
+                      alt="decorative"
+                      className="w-full h-full opacity-50"
+                    />
+                  </GlareHover>
+                </div>
+
+                {/* Equal SVG on the left */}
+                <div className="absolute -left-32 -top-16 z-0">
+                  <GlareHover
+                    width="180px"
+                    height="180px"
+                    background="transparent"
+                    borderRadius="0"
+                    borderColor="transparent"
+                    glareColor="#73B2FF"
+                    glareOpacity={0.3}
+                    glareAngle={30}
+                    glareSize={300}
+                    transitionDuration={800}
+                  >
+                    <img 
+                      src="/src/assets/equal.svg" 
+                      alt="decorative"
+                      className="w-full h-full opacity-50"
+                    />
+                  </GlareHover>
+                </div>
+              </div>
+
+              <div className="max-w-4xl">
+                <h1 className="text-7xl font-bold mb-3 tracking-tight text-white">
+                  The Easiest Way<br />
+                  to Turn Data<br />
+                  into Deals.
+                </h1>
+                <p className="text-gray-300 text-lg mb-3 mx-auto max-w-xl">
+                  Stop doing manual research. SIFT leverages agentic AI to instantly generate rich, actionable client profiles—turning hours of work into personalized sales strategies
+                </p>
+                <button 
+                  onClick={handleLoginClick}
+                  className="bg-white hover:bg-[#73B2FF] text-black hover:text-white px-8 py-3 rounded-lg inline-flex items-center gap-2 transition relative"
+                >
+                  Start Now! <ArrowRight size={20} />
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
 
       {/* Features Section */}
-      <section className="container mx-auto px-8 py-20">
+      <section className="bg-[#1B201A] container mx-auto px-8 py-20">
         <h2 className="text-4xl font-bold text-center mb-16">
           Everything You Need to Close Deals Faster
         </h2>
-        <p className="text-center text-gray-300 mb-12">
+        <p className="text-center text-gray-300 mb-12 max-w-3xl mx-auto">
           The SIFT platform eliminates manual research and delivers the precise intelligence your sales team needs to personalize pitches and accelerate client acquisition
         </p>
 
         <div className="grid md:grid-cols-3 gap-8">
-          <div className="bg-[#1B201A]/80 backdrop-blur p-8 rounded-xl hover:bg-[#1B201A]/90 transition">
-            <div className="bg-[#CE3381] w-16 h-16 rounded-lg flex items-center justify-center mb-4">
-              <FileText size={32} />
+          <div className="bg-[#393D41] border border-gray-800 p-8 rounded-xl shadow-lg">
+            <div className="bg-[#CE3381] w-16 h-16 rounded-lg flex items-center justify-center mb-6">
+              <FileText size={32} className="text-white" />
             </div>
             <h3 className="text-xl font-semibold mb-4">Automate Insight Generation</h3>
-            <p className="text-gray-400">
+            <p className="text-gray-400 leading-relaxed">
               Instantly generate comprehensive client profiles powered by an Agentic AI. Get deep insights into tech stacks, buying signals, and recent activities.
             </p>
           </div>
 
-          <div className="bg-[#1B201A]/80 backdrop-blur p-8 rounded-xl hover:bg-[#1B201A]/90 transition">
-            <div className="bg-[#CE3381] w-16 h-16 rounded-lg flex items-center justify-center mb-4">
-              <Database size={32} />
+          <div className="bg-[#393D41] border border-gray-800 p-8 rounded-xl shadow-lg">
+            <div className="bg-[#CE3381] w-16 h-16 rounded-lg flex items-center justify-center mb-6">
+              <Database size={32} className="text-white" />
             </div>
             <h3 className="text-xl font-semibold mb-4">Unified Prospect Dashboard</h3>
-            <p className="text-gray-400">
+            <p className="text-gray-400 leading-relaxed">
               Manage all your high-potential leads in one central hub. Utilize powerful Search and Filter tools to quickly organize, track, and bookmark your most valuable prospects.
             </p>
           </div>
 
-          <div className="bg-[#1B201A]/80 backdrop-blur p-8 rounded-xl hover:bg-[#1B201A]/90 transition">
-            <div className="bg-[#CE3381] w-16 h-16 rounded-lg flex items-center justify-center mb-4">
-              <TrendingUp size={32} />
+          <div className="bg-[#393D41] border border-gray-800 p-8 rounded-xl shadow-lg">
+            <div className="bg-[#CE3381] w-16 h-16 rounded-lg flex items-center justify-center mb-6">
+              <TrendingUp size={32} className="text-white" />
             </div>
             <h3 className="text-xl font-semibold mb-4">Secure data & Access</h3>
-            <p className="text-gray-400">
+            <p className="text-gray-400 leading-relaxed">
               Ensure that all your sensitive client data and competitive intelligence remain protected. SIFT provides secure User Authentication and keeps your saved profiles private.
             </p>
           </div>
         </div>
 
         <div className="text-center mt-12">
-          <button className="border border-gray-600 hover:border-gray-400 px-6 py-2 rounded-lg transition">
+          <button className="bg-transparent border border-gray-700 hover:border-[#73B2FF] hover:text-[#73B2FF] px-8 py-3 rounded-lg transition duration-300">
             View Demo
-          </button>
+          </button> 
         </div>
       </section>
-      </div>
 
       {/* Find Client Section - Black Background */}
       <section className="bg-[#1B201A] py-20">
@@ -138,40 +264,37 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Testimonials Section - Black Background */}
-      <section className="bg-[#1B201A] py-20">
-        <div className="container mx-auto px-8">
-        <h2 className="text-4xl font-bold text-center mb-16 text-[#73B2FF]">
-          Don't Take Our Word for It
-        </h2>
-
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="bg-white text-gray-900 p-6 rounded-xl">
-              <p className="mb-4 text-sm">
-                "SIFT has been a game changer for our sales team. 
-                We're able to research prospects way faster and 
-                close deals in half the time. The AI-powered insights 
-                are spot on, and the interface is super easy to use. 
-                Highly recommend for any sales team."
-              </p>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-[#73B2FF] rounded-full"></div>
-                <div>
-                  <div className="font-semibold">Sarah Martinez</div>
-                  <div className="text-sm text-gray-600">Sales Director</div>
+            {/* Testimonials Section - Black Background */}
+            <section className="bg-[#1B201A] py-20">
+              <div className="container mx-auto px-8">
+                <h2 className="text-4xl font-bold text-center mb-16 text-[#73B2FF]">
+                  Don't Take Our Word for It
+                </h2>
+      
+                <div className="relative flex h-[500px] w-full flex-row items-center justify-center overflow-hidden">
+                  <div className="flex gap-4">
+                    <Marquee pauseOnHover vertical className="[--duration:20s]">
+                      {reviews.slice(0, 3).map((review) => (
+                        <ReviewCard key={review.username} {...review} />
+                      ))}
+                    </Marquee>
+                    <Marquee reverse pauseOnHover vertical className="[--duration:20s]">
+                      {reviews.slice(3).map((review) => (
+                        <ReviewCard key={review.username} {...review} />
+                      ))}
+                    </Marquee>
+                  </div>
+      
+                  <div className="pointer-events-none absolute inset-x-0 top-0 h-1/4 bg-linear-to-b from-[#1B201A]"></div>
+                  <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/4 bg-linear-to-t from-[#1B201A]"></div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
-        </div>
-      </section>
+            </section>
 
       {/* CTA Section - Black Background */}
       <section className="relative bg-[#1B201A] py-32 overflow-hidden">
         {/* Gradient Overlay from Right */}
-        <div className="absolute inset-0 bg-gradient-to-l from-[#73B2FF]/20 via-transparent to-transparent"></div>
+        <div className="absolute inset-0 bg-linear-to-l from-[#73B2FF]/20 via-transparent to-transparent"></div>
         <div className="container mx-auto px-8 text-center relative z-10">
         <h2 className="text-4xl md:text-5xl font-bold mb-4">Transform</h2>
         <h2 className="text-4xl md:text-5xl font-bold mb-8">Your Prospecting.</h2>
@@ -184,7 +307,6 @@ export default function LandingPage() {
            <p className="text-xs text-gray-400 mt-1 font-medium tracking-wider">User Profiling Agents.AI</p>
           </div>
 
-       {/* Tombol CTA */}
        <button 
         onClick={handleLoginClick}
         className="bg-[#73B2FF] hover:bg-[#5A9DE6] px-10 py-4 rounded-lg flex items-center gap-2 mx-auto text-lg transition text-white"
