@@ -3,6 +3,7 @@ import { ArrowRight, FileText, Database, TrendingUp } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Marquee } from '../ui/marquee';
 import { cn } from '../lib/utils';
+import GlareHover from '../ui/GlareHover';
 
 const ReviewCard = ({ img, name, username, body }) => {
   return (
@@ -104,6 +105,55 @@ export default function LandingPage() {
         {/* Hero Section */}
         <section className="relative z-10 container mx-auto px-8  pb-32 text-center flex items-center justify-center min-h-[calc(100vh-120px)]">
           <div className="max-w-4xl">
+            <div className="relative">
+              {/* Decorative Shapes Container */}
+              <div className="absolute inset-0 w-full">
+                {/* Triangle SVG on the right */}
+                <div className="absolute -right-20 -top-20 z-0">
+                  <GlareHover
+                    width="200px"
+                    height="200px"
+                    background="transparent"
+                    borderRadius="0"
+                    borderColor="transparent"
+                    glareColor="#73B2FF"
+                    glareOpacity={0.3}
+                    glareAngle={-30}
+                    glareSize={300}
+                    transitionDuration={800}
+                  >
+                    <img 
+                      src="/src/assets/triangle.svg" 
+                      alt="decorative"
+                      className="w-full h-full opacity-50"
+                    />
+                  </GlareHover>
+                </div>
+
+                {/* Equal SVG on the left */}
+                <div className="absolute -left-32 -top-16 z-0">
+                  <GlareHover
+                    width="180px"
+                    height="180px"
+                    background="transparent"
+                    borderRadius="0"
+                    borderColor="transparent"
+                    glareColor="#73B2FF"
+                    glareOpacity={0.3}
+                    glareAngle={30}
+                    glareSize={300}
+                    transitionDuration={800}
+                  >
+                    <img 
+                      src="/src/assets/equal.svg" 
+                      alt="decorative"
+                      className="w-full h-full opacity-50"
+                    />
+                  </GlareHover>
+                </div>
+              </div>
+
+               <div className="max-w-4xl">
             <h1 className="text-7xl font-bold mb-3 tracking-tight text-white">
               The Easiest Way<br />
               to Turn Data<br />
@@ -117,7 +167,9 @@ export default function LandingPage() {
               className="bg-white hover:bg-[#73B2FF] text-black hover:text-white px-8 py-3 rounded-lg inline-flex items-center gap-2 transition"
             >
               Start Now! <ArrowRight size={20} />
-            </button>
+                </button>
+              </div>
+            </div>
           </div>
         </section>
       </div>
@@ -242,7 +294,7 @@ export default function LandingPage() {
       {/* CTA Section - Black Background */}
       <section className="relative bg-[#1B201A] py-32 overflow-hidden">
         {/* Gradient Overlay from Right */}
-        <div className="absolute inset-0 bg-gradient-to-l from-[#73B2FF]/20 via-transparent to-transparent"></div>
+        <div className="absolute inset-0 bg-linear-to-l from-[#73B2FF]/20 via-transparent to-transparent"></div>
         <div className="container mx-auto px-8 text-center relative z-10">
         <h2 className="text-4xl md:text-5xl font-bold mb-4">Transform</h2>
         <h2 className="text-4xl md:text-5xl font-bold mb-8">Your Prospecting.</h2>
