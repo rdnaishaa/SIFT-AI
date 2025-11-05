@@ -2,6 +2,19 @@ import { createBrowserRouter, Navigate } from 'react-router-dom';
 import Dashboard from '../pages/Dashboard';
 import DetailPage from '../pages/DetailPage';
 import LandingPage from '../pages/LandingPage';
+import Login from '../pages/Login';
+import Register from '../pages/Register';
+
+// Protected Route Component
+const ProtectedRoute = ({ children }) => {
+  const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+  
+  if (!isLoggedIn) {
+    return <Navigate to="/login" replace />;
+  }
+  
+  return children;
+};
 
 // Error Element Component
 const ErrorPage = () => {
@@ -26,18 +39,28 @@ const router = createBrowserRouter([
     errorElement: <ErrorPage />
   },
   {
+    path: "/login",
+    element: <Login />,
+    errorElement: <ErrorPage />
+  },
+  {
+    path: "/signup",
+    element: <Register />,
+    errorElement: <ErrorPage />
+  },
+  {
     path: "/dashboard",
-    element: <Dashboard />,
+    element: <ProtectedRoute><Dashboard /></ProtectedRoute>,
     errorElement: <ErrorPage />
   },
   {
     path: "/detail/*",  // Menggunakan * untuk menangkap semua path di bawah /detail/
-    element: <DetailPage />,
+    element: <ProtectedRoute><DetailPage /></ProtectedRoute>,
     errorElement: <ErrorPage />
   },
   {
     path: "*",  // Catch semua route yang tidak terdaftar
-    element: <Navigate to="/dashboard" replace />
+    element: <Navigate to="/" replace />
   }
 ]);
 

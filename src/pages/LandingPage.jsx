@@ -1,7 +1,14 @@
 import React from 'react';
 import { ArrowRight, FileText, Database, TrendingUp } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 export default function LandingPage() {
+  const navigate = useNavigate();
+
+  const handleLoginClick = () => {
+    navigate('/login');
+  };
+
   return (
     <div className="min-h-screen text-white">
       {/* Hero Section with Gradient */}
@@ -13,7 +20,10 @@ export default function LandingPage() {
           <a href="#" className="hover:text-blue-400 transition">About</a>
           <a href="#" className="hover:text-blue-400 transition">Features</a>
           <a href="#" className="hover:text-blue-400 transition">Contact</a>
-          <button className="bg-white text-gray-900 px-6 py-2 rounded-lg hover:bg-gray-100 transition">
+          <button 
+            onClick={handleLoginClick}
+            className="bg-white text-gray-900 px-6 py-2 rounded-lg hover:bg-gray-100 transition"
+          >
             Login
           </button>
         </div>
@@ -29,7 +39,10 @@ export default function LandingPage() {
         <p className="text-gray-300 text-lg mb-8 max-w-2xl mx-auto">
           Stop doing manual research. SIFT leverages agentic AI to instantly generate rich, actionable client profiles—turning hours of work into personalized sales strategies
         </p>
-        <button className="bg-white hover:bg-[#73B2FF] text-black hover:text-white px-8 py-3 rounded-lg flex items-center gap-2 mx-auto transition border border-gray-300">
+        <button 
+          onClick={handleLoginClick}
+          className="bg-white hover:bg-[#73B2FF] text-black hover:text-white px-8 py-3 rounded-lg flex items-center gap-2 mx-auto transition border border-gray-300"
+        >
           Get Started <ArrowRight size={20} />
         </button>
       </section>
@@ -172,7 +185,10 @@ export default function LandingPage() {
           </div>
 
        {/* Tombol CTA */}
-       <button className="bg-[#73B2FF] hover:bg-[#5A9DE6] px-10 py-4 rounded-lg flex items-center gap-2 mx-auto text-lg transition text-white">
+       <button 
+        onClick={handleLoginClick}
+        className="bg-[#73B2FF] hover:bg-[#5A9DE6] px-10 py-4 rounded-lg flex items-center gap-2 mx-auto text-lg transition text-white"
+       >
         Start Now! <ArrowRight size={24} />
        </button>
 
