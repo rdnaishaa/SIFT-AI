@@ -1,8 +1,71 @@
 import React from 'react';
 import { ArrowRight, FileText, Database, TrendingUp } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { Marquee } from '../ui/marquee';
+import { cn } from '../lib/utils';
+
+const ReviewCard = ({ img, name, username, body }) => {
+  return (
+    <figure
+      className={cn(
+        "relative w-96 cursor-pointer overflow-hidden rounded-xl border p-6 mb-6",
+        "border-gray-800 bg-[#393D41] hover:bg-[#393D41]/90",
+        "backdrop-blur-sm shadow-lg"
+      )}
+    >
+      <blockquote className="text-sm text-gray-300 leading-relaxed mb-4">{body}</blockquote>
+      <div className="flex flex-row items-center gap-3">
+        <img className="rounded-full w-10 h-10" alt={name} src={img} />
+        <div className="flex flex-col">
+          <figcaption className="text-sm font-medium text-white">
+            {name}
+          </figcaption>
+          <p className="text-xs font-medium text-gray-400">{username}</p>
+        </div>
+      </div>
+    </figure>
+  );
+};
 
 export default function LandingPage() {
+  const reviews = [
+  {
+    name: "Risa Kurnia",
+    username: "@risakur",
+    body: "We managed to close two major deals last month that were previously stalled. The secret? SIFT provided the exact buying signals and key contacts. This real-time information drastically shortened our sales cycle. 'Data into Deals' is not just a slogan—it's reality.",
+    img: "https://avatar.vercel.sh/risa"
+  },
+  {
+    name: "Citra Ayu",
+    username: "@cityou",
+    body: "Before SIFT, my team spent hours on basic research. Now, all the AI-generated client profiles are automated and comprehensive within minutes. We've saved over 60% of our prospecting time. This isn't just an app, it's a direct shortcut to a more efficient pipeline",
+    img: "https://avatar.vercel.sh/citra"
+  },
+  {
+    name: "Maya Larasati",
+    username: "@maylars",
+    body: "The data SIFT generates is incredibly deep. We don't just know who our clients are, but the specific technologies they use. This tech stack insight makes our pitches 100% more relevant and allows us to hit their pain points directly. A true game-changer",
+    img: "https://avatar.vercel.sh/maya"
+  },
+  {
+    name: "Esun",
+    username: "@esuuun",
+    body: "SIFT allowed my marketing team to move from mass campaigns to a high level of personalization. With rich data, we can create signals and key contacts. This real-time information drastically shortened our sales cycle. Much higher response and engagement rates",
+    img: "https://avatar.vercel.sh/esun"
+  },
+  {
+    name: "Firman",
+    username: "@pearman",
+    body: "We use SIFT to validate and expand our target market across Indonesia. Its powerful search and filter capabilities help us pinpoint companies with the exact risk profile and budget we need. A truly valuable investment for our long-term strategy",
+    img: "https://avatar.vercel.sh/firman"
+  },
+  {
+    name: "Santi Dewi",
+    username: "@sntidw",
+    body: "SIFT's interface is so clean and intuitive. All the AI-generated client profiles are automated and comprehensive within minutes. Everything I need is right on the dashboard.",
+    img: "https://avatar.vercel.sh/santi"
+  }];
+
   const navigate = useNavigate();
 
   const handleLoginClick = () => {
@@ -149,35 +212,32 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Testimonials Section - Black Background */}
-      <section className="bg-[#1B201A] py-20">
-        <div className="container mx-auto px-8">
-        <h2 className="text-4xl font-bold text-center mb-16 text-[#73B2FF]">
-          Don't Take Our Word for It
-        </h2>
-
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="bg-white text-gray-900 p-6 rounded-xl">
-              <p className="mb-4 text-sm">
-                "SIFT has been a game changer for our sales team. 
-                We're able to research prospects way faster and 
-                close deals in half the time. The AI-powered insights 
-                are spot on, and the interface is super easy to use. 
-                Highly recommend for any sales team."
-              </p>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-[#73B2FF] rounded-full"></div>
-                <div>
-                  <div className="font-semibold">Sarah Martinez</div>
-                  <div className="text-sm text-gray-600">Sales Director</div>
+            {/* Testimonials Section - Black Background */}
+            <section className="bg-[#1B201A] py-20">
+              <div className="container mx-auto px-8">
+                <h2 className="text-4xl font-bold text-center mb-16 text-[#73B2FF]">
+                  Don't Take Our Word for It
+                </h2>
+      
+                <div className="relative flex h-[500px] w-full flex-row items-center justify-center overflow-hidden">
+                  <div className="flex gap-4">
+                    <Marquee pauseOnHover vertical className="[--duration:20s]">
+                      {reviews.slice(0, 3).map((review) => (
+                        <ReviewCard key={review.username} {...review} />
+                      ))}
+                    </Marquee>
+                    <Marquee reverse pauseOnHover vertical className="[--duration:20s]">
+                      {reviews.slice(3).map((review) => (
+                        <ReviewCard key={review.username} {...review} />
+                      ))}
+                    </Marquee>
+                  </div>
+      
+                  <div className="pointer-events-none absolute inset-x-0 top-0 h-1/4 bg-linear-to-b from-[#1B201A]"></div>
+                  <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/4 bg-linear-to-t from-[#1B201A]"></div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
-        </div>
-      </section>
+            </section>
 
       {/* CTA Section - Black Background */}
       <section className="relative bg-[#1B201A] py-32 overflow-hidden">
