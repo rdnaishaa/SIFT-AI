@@ -15,14 +15,28 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from AgentScraper.schemas import CompanyProfile
 from AgentScraper.profiler import run_sift_agent
+from .database import db
+from .users import router as auth_router
+from .profiles import router as profiles_router
 
 load_dotenv()
 
 app = FastAPI(
     title="SIFT API",
-    description="API untuk SIFT User Profiling Agentic AI",
+    description="API untuk SIFT User Profiling Agentic AI dengan Authentication",
     version="1.0.0"
 )
+
+# Event handlers untuk database connection
+@app.on_event("startup")
+async def startup():
+    """Connect ke database saat aplikasi start"""
+    await db.connect()
+
+@app.on_event("shutdown")
+async def shutdown():
+    """Disconnect dari database saat aplikasi shutdown"""
+    await db.disconnect()
 
 origins = [
     "http://localhost",
@@ -36,6 +50,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Include authentication router
+app.include_router(auth_router)
+# Include profiles router (protected routes)
+app.include_router(profiles_router)
 
 class ProfileRequest(BaseModel):
     company_name: str = Field(..., example="PT Gojek Tokopedia")

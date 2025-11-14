@@ -1,26 +1,40 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../hooks/useAuth";
 
 const Register = () => {
-  const [email, setEmail] = useState('');
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [retypePassword, setRetypePassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [retypePassword, setRetypePassword] = useState("");
   const [acceptTerms, setAcceptTerms] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
   const navigate = useNavigate();
+  const { register } = useAuth();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setErrorMessage("");
+
     if (password !== retypePassword) {
-      alert('Passwords do not match!');
+      setErrorMessage("Passwords do not match!");
       return;
     }
     if (!acceptTerms) {
-      alert('Please accept the terms and conditions');
+      setErrorMessage("Please accept the terms and conditions");
       return;
     }
-    // Here you would typically handle the registration
-    navigate('/login');
+
+    setLoading(true);
+    try {
+      await register(username, email, password);
+      navigate("/dashboard");
+    } catch (err) {
+      setErrorMessage(err.message || "Registration failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -28,7 +42,11 @@ const Register = () => {
       {/* Left side - Logo and Gradient Background */}
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-[#73B2FF] to-[#1B201A] justify-center items-center">
         <div className="text-white text-center">
-          <img src="/SIFT no BG.png" alt="SIFT Logo" className="h-24 mx-auto mb-6" />
+          <img
+            src="/SIFT no BG.png"
+            alt="SIFT Logo"
+            className="h-24 mx-auto mb-6"
+          />
           <p className="text-xl">Welcome to SIFT AI Platform</p>
         </div>
       </div>
@@ -37,13 +55,24 @@ const Register = () => {
       <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-[#1B201A]">
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold text-white mb-2">Let's Create an Account!</h2>
+            <h2 className="text-3xl font-bold text-white mb-2">
+              Let's Create an Account!
+            </h2>
             <p className="text-gray-400">Welcome</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
+            {errorMessage && (
+              <div className="bg-red-500/10 border border-red-500 text-red-400 px-4 py-3 rounded-md text-sm">
+                {errorMessage}
+              </div>
+            )}
+
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-300">
+              <label
+                htmlFor="email"
+                className="block text-sm font-medium text-gray-300"
+              >
                 Email Address
               </label>
               <input
@@ -52,13 +81,17 @@ const Register = () => {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="mt-1 block w-full rounded-md bg-[#1B201A] border border-[#73B2FF]/30 text-white px-4 py-2 focus:border-[#73B2FF] focus:ring-1 focus:ring-[#73B2FF]"
+                disabled={loading}
+                className="mt-1 block w-full rounded-md bg-[#1B201A] border border-[#73B2FF]/30 text-white px-4 py-2 focus:border-[#73B2FF] focus:ring-1 focus:ring-[#73B2FF] disabled:opacity-50"
                 placeholder="Enter your email"
               />
             </div>
 
             <div>
-              <label htmlFor="username" className="block text-sm font-medium text-gray-300">
+              <label
+                htmlFor="username"
+                className="block text-sm font-medium text-gray-300"
+              >
                 Username
               </label>
               <input
@@ -67,13 +100,17 @@ const Register = () => {
                 required
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className="mt-1 block w-full rounded-md bg-[#1B201A] border border-[#73B2FF]/30 text-white px-4 py-2 focus:border-[#73B2FF] focus:ring-1 focus:ring-[#73B2FF]"
+                disabled={loading}
+                className="mt-1 block w-full rounded-md bg-[#1B201A] border border-[#73B2FF]/30 text-white px-4 py-2 focus:border-[#73B2FF] focus:ring-1 focus:ring-[#73B2FF] disabled:opacity-50"
                 placeholder="Choose a username"
               />
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-300">
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium text-gray-300"
+              >
                 Password
               </label>
               <input
@@ -82,13 +119,17 @@ const Register = () => {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="mt-1 block w-full rounded-md bg-[#1B201A] border border-[#73B2FF]/30 text-white px-4 py-2 focus:border-[#73B2FF] focus:ring-1 focus:ring-[#73B2FF]"
+                disabled={loading}
+                className="mt-1 block w-full rounded-md bg-[#1B201A] border border-[#73B2FF]/30 text-white px-4 py-2 focus:border-[#73B2FF] focus:ring-1 focus:ring-[#73B2FF] disabled:opacity-50"
                 placeholder="••••••••"
               />
             </div>
 
             <div>
-              <label htmlFor="retypePassword" className="block text-sm font-medium text-gray-300">
+              <label
+                htmlFor="retypePassword"
+                className="block text-sm font-medium text-gray-300"
+              >
                 Re-type Password
               </label>
               <input
@@ -97,7 +138,8 @@ const Register = () => {
                 required
                 value={retypePassword}
                 onChange={(e) => setRetypePassword(e.target.value)}
-                className="mt-1 block w-full rounded-md bg-[#1B201A] border border-[#73B2FF]/30 text-white px-4 py-2 focus:border-[#73B2FF] focus:ring-1 focus:ring-[#73B2FF]"
+                disabled={loading}
+                className="mt-1 block w-full rounded-md bg-[#1B201A] border border-[#73B2FF]/30 text-white px-4 py-2 focus:border-[#73B2FF] focus:ring-1 focus:ring-[#73B2FF] disabled:opacity-50"
                 placeholder="••••••••"
               />
             </div>
@@ -110,12 +152,15 @@ const Register = () => {
                 onChange={(e) => setAcceptTerms(e.target.checked)}
                 className="h-4 w-4 rounded border-gray-300 text-[#73B2FF] focus:ring-[#73B2FF]"
               />
-              <label htmlFor="terms" className="ml-2 block text-sm text-gray-300">
-                I have read and agree to the{' '}
+              <label
+                htmlFor="terms"
+                className="ml-2 block text-sm text-gray-300"
+              >
+                I have read and agree to the{" "}
                 <a href="#" className="text-[#73B2FF] hover:text-[#73B2FF]/80">
                   terms
-                </a>{' '}
-                and{' '}
+                </a>{" "}
+                and{" "}
                 <a href="#" className="text-[#73B2FF] hover:text-[#73B2FF]/80">
                   conditions
                 </a>
@@ -124,15 +169,19 @@ const Register = () => {
 
             <button
               type="submit"
-              className="w-full bg-[#73B2FF] hover:bg-[#73B2FF]/80 text-white font-semibold py-2 px-4 rounded-md transition duration-200"
+              disabled={loading}
+              className="w-full bg-[#73B2FF] hover:bg-[#73B2FF]/80 text-white font-semibold py-2 px-4 rounded-md transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Sign Up
+              {loading ? "Creating Account..." : "Sign Up"}
             </button>
           </form>
 
           <div className="mt-6 text-center text-gray-400">
             <span>Already have an account? </span>
-            <Link to="/login" className="text-[#73B2FF] hover:text-[#73B2FF]/80">
+            <Link
+              to="/login"
+              className="text-[#73B2FF] hover:text-[#73B2FF]/80"
+            >
               Login here
             </Link>
           </div>

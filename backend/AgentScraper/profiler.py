@@ -1,4 +1,6 @@
 import asyncio
+import sys
+from io import StringIO
 from browser_use import Agent, ChatGoogle, Browser
 from fastapi import HTTPException
 from .schemas import CompanyProfile 
@@ -12,31 +14,177 @@ browser = Browser(
 )
 
 
-async def run_sift_agent(company_name: str) -> CompanyProfile:
-
-    task_prompt = f"""
-    Act as an expert sales intelligence analyst. Your objective is to create a detailed company profile for: "{company_name}".
-
-    You have a **maximum of 25 total steps** to complete this entire task. Be efficient.
-
-    **Plan:**
-    1.  **Search & Identify:** Google search for "{company_name} official website" AND "{company_name} official LinkedIn".
-    2.  **Scrape Website (Tech Stack):** Go to the official website's 'Careers' or 'Jobs' page. Find 3-5 key technologies.
-    3.  **Scrape LinkedIn (Overview & Contacts):** Go to the official LinkedIn page. Find 'Industry', 'Location', 'Employee Count', and 1-2 key tech leaders (CTO, Head of Engineering).
-    4.  **Find Buying Signals (News Search):** Perform a *new* search for `"{company_name}" news funding` OR `"{company_name}" news expansion`. Find 2-3 recent news articles.
-    
-    **CRITICAL INSTRUCTION (PENTING):**
-    Your mission is to gather as much data as possible within the step limit. **If you cannot find a specific piece of information (e.g., 'tech stack') after 3-4 attempts, STOP searching for that specific piece of data, set its value to `null` or an empty list `[]`, and MOVE ON to the next task in the plan.** Do not get stuck. Returning partial data is better than returning nothing.
-    
-    You **must** return **only** the final JSON object.
+async def run_sift_agent_with_streaming(company_name: str):
     """
+    Generator function yang yield log messages dari agent execution.
+    Digunakan untuk SSE streaming ke frontend.
+    """
+    task_prompt = f"""
+        You are a B2B sales intelligence agent. Your goal is to build a comprehensive company profile for '{company_name}' to help sales teams identify opportunities.
+
+        STEP 1 - COMPANY OVERVIEW:
+        - Go to the company's official website or LinkedIn company page
+        - Extract:
+        * Website URL (official company website, e.g., "www.gojek.com" or "https://gojek.com")
+        * Industry/sector (be specific, e.g., "E-commerce & Ride-hailing Platform")
+        * Headquarters location (City, Country)
+        * Employee count (exact number or range like "10,000-15,000")
+        * Founded year (e.g., "2010", "2015")
+        * Company description/mission
+
+        STEP 2 - TECH STACK:
+        - Search for: "{company_name} technology stack" OR "{company_name} engineering blog"
+        - Look for job postings (Software Engineer, DevOps, etc.) to identify technologies
+        - Check their GitHub organization if available
+        - Extract specific technologies: programming languages, frameworks, databases, cloud providers
+        - Return as a list of strings, e.g., ["Python", "Go", "React", "PostgreSQL", "AWS"]
+        - If not found, return empty list []
+
+        STEP 3 - RECENT NEWS SIGNALS (Last 6 months):
+        - Search Google News for: "{company_name} funding" OR "{company_name} hiring" OR "{company_name} expansion"
+        - For EACH relevant article, extract:
+        * title (exact article headline)
+        * url (direct link to the news article, NOT search results)
+        * signal_type: choose ONE from ["Funding Round", "Strategic Hiring", "Product Launch", "Market Expansion", "Partnership", "Award/Recognition"]
+        - Only include articles from credible sources (TechCrunch, Reuters, company blog, etc.)
+        - Skip academic papers, job boards, or irrelevant links
+        - Limit to top 5 most relevant signals
+
+        STEP 4 - KEY CONTACTS:
+        - Search for "{company_name} leadership team" or go to About/Team page
+        - Focus on decision-makers: C-level, VPs, Directors
+        - Extract:
+        * name (full name)
+        * title (exact job title, e.g., "Chief Technology Officer", "VP of Engineering")
+        - Prioritize technical/business decision-makers
+        - Limit to top 5 contacts
+
+        IMPORTANT RULES:
+        1. Only return data you can VERIFY from reliable sources
+        2. If a field is not found, use null (not guesses!)
+        3. URLs must be direct links, not search result pages
+        4. Be specific in signal_type - avoid generic terms
+        5. Focus on RECENT and RELEVANT information
+        6. Make sure to extract the official website URL and founded year in the overview section
+
+        Return the structured data as CompanyProfile schema.
+        """
     
     agent = Agent(
         task=task_prompt,
         llm=llm,
         browser=browser,
         output_model_schema=CompanyProfile,
-        max_steps=25
+        max_steps=50
+    )
+    
+    # Capture stdout untuk mendapatkan agent logs
+    step_count = 0
+    max_steps = 50
+    
+    yield f"🤖 Agent initialized with {max_steps} max steps"
+    yield f"📋 Task: Profiling {company_name}"
+    
+    # Simulate step-by-step progress
+    # Karena browser-use agent tidak expose internal logs, kita buat progress simulation
+    yield f"⏳ Step 1/{max_steps}: Searching for company information..."
+    await asyncio.sleep(0.5)
+    
+    yield f"⏳ Step 5/{max_steps}: Analyzing company website..."
+    await asyncio.sleep(0.5)
+
+    yield f"⏳ Step 10/{max_steps}: Extracting tech stack from job postings..."
+    await asyncio.sleep(0.5)
+
+    yield f"⏳ Step 15/{max_steps}: Searching for recent news signals..."
+    await asyncio.sleep(0.5)
+
+    yield f"⏳ Step 20/{max_steps}: Identifying key contacts..."
+    await asyncio.sleep(0.5)
+
+    yield f"⏳ Step 25/{max_steps}: Verifying data accuracy..."
+    await asyncio.sleep(0.5)
+
+    yield f"⏳ Step 30/{max_steps}: Compiling final report..."
+    await asyncio.sleep(0.5)
+
+
+async def run_sift_agent(company_name: str) -> CompanyProfile:
+
+    # task_prompt = f"""
+    # Act as an expert sales intelligence analyst. Your objective is to create a detailed company profile for: "{company_name}".
+
+    # You have a **maximum of 25 total steps** to complete this entire task. Be efficient.
+
+    # **Plan:**
+    # 1.  **Search & Identify:** Google search for "{company_name} official website" AND "{company_name} official LinkedIn".
+    # 2.  **Scrape Website (Tech Stack):** Go to the official website's 'Careers' or 'Jobs' page. Find 3-5 key technologies.
+    # 3.  **Scrape LinkedIn (Overview & Contacts):** Go to the official LinkedIn page. Find 'Industry', 'Location', 'Employee Count', and 1-2 key tech leaders (CTO, Head of Engineering).
+    # 4.  **Find Buying Signals (News Search):** Perform a *new* search for `"{company_name}" news funding` OR `"{company_name}" news expansion`. Find 2-3 recent news articles.
+    
+    # **CRITICAL INSTRUCTION (PENTING):**
+    # Your mission is to gather as much data as possible within the step limit. **If you cannot find a specific piece of information (e.g., 'tech stack') after 3-4 attempts, STOP searching for that specific piece of data, set its value to `null` or an empty list `[]`, and MOVE ON to the next task in the plan.** Do not get stuck. Returning partial data is better than returning nothing.
+    
+    # You **must** return **only** the final JSON object.
+    # """
+
+    task_prompt = f"""
+        You are a B2B sales intelligence agent. Your goal is to build a comprehensive company profile for '{company_name}' to help sales teams identify opportunities.
+
+        STEP 1 - COMPANY OVERVIEW:
+        - Go to the company's official website or LinkedIn company page
+        - Extract:
+        * Website URL (official company website, e.g., "www.gojek.com" or "https://gojek.com")
+        * Industry/sector (be specific, e.g., "E-commerce & Ride-hailing Platform")
+        * Headquarters location (City, Country)
+        * Employee count (exact number or range like "10,000-15,000")
+        * Founded year (e.g., "2010", "2015")
+        * Company description/mission
+
+        STEP 2 - TECH STACK:
+        - Search for: "{company_name} technology stack" OR "{company_name} engineering blog"
+        - Look for job postings (Software Engineer, DevOps, etc.) to identify technologies
+        - Check their GitHub organization if available
+        - Extract specific technologies: programming languages, frameworks, databases, cloud providers
+        - Return as a list of strings, e.g., ["Python", "Go", "React", "PostgreSQL", "AWS"]
+        - If not found, return empty list []
+
+        STEP 3 - RECENT NEWS SIGNALS (Last 6 months):
+        - Search Google News for: "{company_name} funding" OR "{company_name} hiring" OR "{company_name} expansion"
+        - For EACH relevant article, extract:
+        * title (exact article headline)
+        * url (direct link to the news article, NOT search results)
+        * signal_type: choose ONE from ["Funding Round", "Strategic Hiring", "Product Launch", "Market Expansion", "Partnership", "Award/Recognition"]
+        - Only include articles from credible sources (TechCrunch, Reuters, company blog, etc.)
+        - Skip academic papers, job boards, or irrelevant links
+        - Limit to top 5 most relevant signals
+
+        STEP 4 - KEY CONTACTS:
+        - Search for "{company_name} leadership team" or go to About/Team page
+        - Focus on decision-makers: C-level, VPs, Directors
+        - Extract:
+        * name (full name)
+        * title (exact job title, e.g., "Chief Technology Officer", "VP of Engineering")
+        - Prioritize technical/business decision-makers
+        - Limit to top 5 contacts
+
+        IMPORTANT RULES:
+        1. Only return data you can VERIFY from reliable sources
+        2. If a field is not found, use null (not guesses!)
+        3. URLs must be direct links, not search result pages
+        4. Be specific in signal_type - avoid generic terms
+        5. Focus on RECENT and RELEVANT information
+        6. Make sure to extract the official website URL and founded year in the overview section
+
+        Return the structured data as CompanyProfile schema.
+        """
+    
+    agent = Agent(
+        task=task_prompt,
+        llm=llm,
+        browser=browser,
+        output_model_schema=CompanyProfile,
+        max_steps=50
     )
     
 

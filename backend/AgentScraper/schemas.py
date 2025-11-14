@@ -11,6 +11,8 @@ class CompanyOverview(BaseModel):
     industry: Optional[str] = Field(default=None, description="The main industry the company operates in.")
     location: Optional[str] = Field(default=None, description="The company's headquarters, e.g., 'Jakarta, Indonesia'")
     employee_count: Optional[str] = Field(default=None, description="Estimated number of employees, e.g., '1000-5000'")
+    website: Optional[str] = Field(default=None, description="The company's official website URL")
+    founded_year: Optional[str] = Field(default=None, description="The year the company was founded, e.g., '2010'")
 
 class NewsSignal(BaseModel):
     # Judul dan URL adalah opsional. Mungkin agent hanya menemukan salah satunya.
