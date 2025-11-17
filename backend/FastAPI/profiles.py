@@ -35,6 +35,7 @@ class ProfileResponse(BaseModel):
     opening_lines: Optional[dict] = None
     data_sources: Optional[list] = None
     last_analyzed_at: Optional[str] = None
+    is_favorite: Optional[bool] = False
     
     created_at: str
 
@@ -279,7 +280,7 @@ async def get_my_profiles(current_user: dict = Depends(get_current_user)):
             """
             SELECT profile_id, user_id, company_name, overview, tech_stack,
                    recent_news_signals, key_contacts, executive_summary, pain_points,
-                   opening_lines, data_sources, last_analyzed_at, created_at
+                   opening_lines, data_sources, last_analyzed_at, is_favorite, created_at
             FROM company_profiles
             WHERE user_id = $1
             ORDER BY created_at DESC
@@ -302,6 +303,7 @@ async def get_my_profiles(current_user: dict = Depends(get_current_user)):
                 opening_lines=json.loads(profile["opening_lines"]) if profile["opening_lines"] else None,
                 data_sources=json.loads(profile["data_sources"]) if profile["data_sources"] else None,
                 last_analyzed_at=str(profile["last_analyzed_at"]) if profile["last_analyzed_at"] else None,
+                is_favorite=profile["is_favorite"] if profile["is_favorite"] is not None else False,
                 created_at=str(profile["created_at"])
             ))
         
@@ -332,7 +334,7 @@ async def get_profile_by_id(
             """
             SELECT profile_id, user_id, company_name, overview, tech_stack,
                    recent_news_signals, key_contacts, executive_summary, pain_points,
-                   opening_lines, data_sources, last_analyzed_at, created_at
+                   opening_lines, data_sources, last_analyzed_at, is_favorite, created_at
             FROM company_profiles
             WHERE profile_id = $1::uuid AND user_id = $2
             """,
@@ -359,6 +361,7 @@ async def get_profile_by_id(
             opening_lines=json.loads(profile["opening_lines"]) if profile["opening_lines"] else None,
             data_sources=json.loads(profile["data_sources"]) if profile["data_sources"] else None,
             last_analyzed_at=str(profile["last_analyzed_at"]) if profile["last_analyzed_at"] else None,
+            is_favorite=profile["is_favorite"] if profile["is_favorite"] is not None else False,
             created_at=str(profile["created_at"])
         )
     
@@ -413,4 +416,75 @@ async def delete_profile(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to delete profile: {str(e)}"
+        )
+
+
+@router.patch("/{profile_id}/favorite", response_model=ProfileResponse)
+async def toggle_favorite(
+    profile_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Toggle status favorite untuk company profile.
+    
+    **Requires**: Bearer token di header Authorization
+    
+    User hanya bisa toggle favorite untuk profile miliknya sendiri.
+    """
+    try:
+        # Cek apakah profile ada dan milik user ini
+        existing = await db.fetch_one(
+            "SELECT is_favorite FROM company_profiles WHERE profile_id = $1::uuid AND user_id = $2",
+            profile_id,
+            current_user["user_id"]
+        )
+        
+        if not existing:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Profile not found or you don't have access"
+            )
+        
+        # Toggle favorite status
+        new_favorite_status = not existing["is_favorite"] if existing["is_favorite"] is not None else True
+        
+        # Update database
+        updated_profile = await db.fetch_one(
+            """
+            UPDATE company_profiles 
+            SET is_favorite = $1
+            WHERE profile_id = $2::uuid AND user_id = $3
+            RETURNING profile_id, user_id, company_name, overview, tech_stack,
+                      recent_news_signals, key_contacts, executive_summary, pain_points,
+                      opening_lines, data_sources, last_analyzed_at, is_favorite, created_at
+            """,
+            new_favorite_status,
+            profile_id,
+            current_user["user_id"]
+        )
+        
+        return ProfileResponse(
+            profile_id=str(updated_profile["profile_id"]),
+            user_id=str(updated_profile["user_id"]),
+            company_name=updated_profile["company_name"],
+            overview=json.loads(updated_profile["overview"]) if updated_profile["overview"] else None,
+            tech_stack=json.loads(updated_profile["tech_stack"]) if updated_profile["tech_stack"] else None,
+            recent_news_signals=json.loads(updated_profile["recent_news_signals"]) if updated_profile["recent_news_signals"] else None,
+            key_contacts=json.loads(updated_profile["key_contacts"]) if updated_profile["key_contacts"] else None,
+            executive_summary=updated_profile["executive_summary"],
+            pain_points=json.loads(updated_profile["pain_points"]) if updated_profile["pain_points"] else None,
+            opening_lines=json.loads(updated_profile["opening_lines"]) if updated_profile["opening_lines"] else None,
+            data_sources=json.loads(updated_profile["data_sources"]) if updated_profile["data_sources"] else None,
+            last_analyzed_at=str(updated_profile["last_analyzed_at"]) if updated_profile["last_analyzed_at"] else None,
+            is_favorite=updated_profile["is_favorite"],
+            created_at=str(updated_profile["created_at"])
+        )
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error toggling favorite: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to toggle favorite: {str(e)}"
         )

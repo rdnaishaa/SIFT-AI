@@ -11,6 +11,7 @@ import {
   Download,
   Trash2,
   MoreVertical,
+  Star,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -24,6 +25,7 @@ export default function DetailPage() {
   const [deleting, setDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [openDropdown, setOpenDropdown] = useState(false);
+  const [favoriteLoading, setFavoriteLoading] = useState(false);
   const navigate = useNavigate();
   const { id } = useParams();
 
@@ -88,6 +90,23 @@ export default function DetailPage() {
       alert(error.message || "Failed to delete profile");
       setDeleting(false);
       setShowDeleteConfirm(false);
+    }
+  };
+
+  // Handle toggle favorite
+  const handleToggleFavorite = async () => {
+    setFavoriteLoading(true);
+    try {
+      const updatedProfile = await profileAPI.toggleFavorite(id);
+      setProfile((prev) => ({
+        ...prev,
+        is_favorite: updatedProfile.is_favorite,
+      }));
+    } catch (error) {
+      console.error("Error toggling favorite:", error);
+      alert(error.message || "Failed to toggle favorite");
+    } finally {
+      setFavoriteLoading(false);
     }
   };
 
@@ -580,6 +599,27 @@ export default function DetailPage() {
           </button>
 
           <div className="flex items-center gap-3">
+            {/* Favorite Button */}
+            <button
+              onClick={handleToggleFavorite}
+              disabled={favoriteLoading}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition ${
+                profile?.is_favorite
+                  ? "bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30 border border-yellow-500/30"
+                  : "bg-gray-700 text-gray-300 hover:bg-gray-600 border border-gray-600"
+              } ${favoriteLoading ? "opacity-50 cursor-not-allowed" : ""}`}
+            >
+              <Star
+                size={18}
+                fill={profile?.is_favorite ? "currentColor" : "none"}
+              />
+              {favoriteLoading
+                ? "Loading..."
+                : profile?.is_favorite
+                ? "Favorited"
+                : "Add to Favorites"}
+            </button>
+
             <button
               onClick={downloadPDF}
               className="flex items-center gap-2 px-4 py-2 bg-[#5B9FED] hover:bg-[#4A8DD9] rounded-lg text-sm font-medium transition"

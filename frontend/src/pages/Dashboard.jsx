@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, ChevronDown, MoreVertical, Trash2 } from "lucide-react";
+import { Search, ChevronDown, MoreVertical, Trash2, Star } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
 import { profileAPI } from "../services/api";
 import LogModal from "../components/LogModal";
@@ -21,6 +21,7 @@ export default function Dashboard() {
   const [deletingId, setDeletingId] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [profileToDelete, setProfileToDelete] = useState(null);
+  const [favoriteLoadingId, setFavoriteLoadingId] = useState(null);
 
   // SSE State
   const [showLogModal, setShowLogModal] = useState(false);
@@ -36,12 +37,19 @@ export default function Dashboard() {
     fetchProfiles();
   }, []);
 
+  // Auto-update favorites when profiles change
+  useEffect(() => {
+    if (activeTab === "favorites" && profiles.length > 0) {
+      setFavorites(profiles.filter((p) => p.is_favorite === true));
+    }
+  }, [profiles, activeTab]);
+
   // Fetch favorite profiles
   const fetchFavorites = async () => {
     setFavoritesLoading(true);
     try {
-      // Fallback: filter profiles with `is_favorite` flag if backend doesn't support endpoint
-      setFavorites(profiles.filter((p) => p.is_favorite));
+      // Filter profiles yang is_favorite = true
+      setFavorites(profiles.filter((p) => p.is_favorite === true));
     } catch (err) {
       console.error("Error fetching favorites:", err);
     } finally {
@@ -216,6 +224,38 @@ export default function Dashboard() {
   const handleCancelDelete = () => {
     setShowDeleteConfirm(false);
     setProfileToDelete(null);
+  };
+
+  // Handle toggle favorite
+  const handleToggleFavorite = async (profile, event) => {
+    event.stopPropagation();
+    const profileId = profile.profile_id || profile.id;
+    setFavoriteLoadingId(profileId);
+
+    try {
+      const updatedProfile = await profileAPI.toggleFavorite(profileId);
+      
+      // Update profiles state immediately
+      setProfiles((prevProfiles) => {
+        const newProfiles = prevProfiles.map((p) =>
+          (p.profile_id || p.id) === profileId
+            ? { ...p, is_favorite: updatedProfile.is_favorite }
+            : p
+        );
+        
+        // Also update favorites if we're in that tab
+        if (activeTab === "favorites") {
+          setFavorites(newProfiles.filter((p) => p.is_favorite === true));
+        }
+        
+        return newProfiles;
+      });
+    } catch (error) {
+      console.error("Error toggling favorite:", error);
+      alert(error.message || "Failed to toggle favorite");
+    } finally {
+      setFavoriteLoadingId(null);
+    }
   };
 
   // Format relative time
@@ -560,7 +600,33 @@ export default function Dashboard() {
                         key={profile.profile_id || profile.id}
                         className="bg-[#1A1D21] border border-gray-700 rounded-2xl p-6 hover:border-[#5B9FED] transition-all relative"
                       >
-                        {/* Dropdown Menu Button */}
+                        {/* Favorite Button - Top Left */}
+                        <div className="absolute top-4 left-4">
+                          <button
+                            onClick={(e) => handleToggleFavorite(profile, e)}
+                            disabled={
+                              favoriteLoadingId ===
+                              (profile.profile_id || profile.id)
+                            }
+                            className={`transition p-1 rounded-lg ${
+                              profile.is_favorite
+                                ? "text-yellow-400 hover:text-yellow-500"
+                                : "text-gray-500 hover:text-yellow-400"
+                            } ${
+                              favoriteLoadingId ===
+                              (profile.profile_id || profile.id)
+                                ? "opacity-50 cursor-not-allowed"
+                                : ""
+                            }`}
+                          >
+                            <Star
+                              size={20}
+                              fill={profile.is_favorite ? "currentColor" : "none"}
+                            />
+                          </button>
+                        </div>
+
+                        {/* Dropdown Menu Button - Top Right */}
                         <div className="absolute top-4 right-4">
                           <button
                             onClick={(e) =>

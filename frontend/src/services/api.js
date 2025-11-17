@@ -239,6 +239,15 @@ export const profileAPI = {
   },
 
   /**
+   * Toggle favorite status for a profile
+   * @param {string} profileId
+   * @returns {Promise<object>}
+   */
+  async toggleFavorite(profileId) {
+    return await apiClient.patch(`/profiles/${profileId}/favorite`);
+  },
+
+  /**
    * Generate profile without authentication (legacy endpoint)
    * @param {string} companyName
    * @returns {Promise<object>}
