@@ -50,14 +50,29 @@ async def run_sift_agent_with_streaming(company_name: str):
         - Skip academic papers, job boards, or irrelevant links
         - Limit to top 5 most relevant signals
 
-        STEP 4 - KEY CONTACTS:
-        - Search for "{company_name} leadership team" or go to About/Team page
-        - Focus on decision-makers: C-level, VPs, Directors
-        - Extract:
-        * name (full name)
-        * title (exact job title, e.g., "Chief Technology Officer", "VP of Engineering")
-        - Prioritize technical/business decision-makers
-        - Limit to top 5 contacts
+        STEP 4 - KEY CONTACTS (CRITICAL - Follow carefully):
+        - Search for "{company_name} leadership team" OR go to company About/Team/Leadership page
+        - Also try: "{company_name} executives" OR "{company_name} management team"
+        - Look for LinkedIn profiles by searching: "site:linkedin.com {company_name} CTO" or similar
+        
+        For EACH contact, you MUST extract:
+        * name: Full name of the person (REQUIRED)
+        * title: Their EXACT job title as shown on the page (e.g., "Chief Technology Officer", "VP of Engineering", "Head of Product", "Co-Founder & CTO")
+          - DO NOT leave title as null if you find the person's name
+          - The title is usually RIGHT NEXT TO or BELOW the person's name
+          - Look for keywords: CEO, CTO, CFO, VP, Director, Head, Chief, President, Manager
+        * linkedin: Full LinkedIn profile URL if available (e.g., "https://linkedin.com/in/john-doe")
+        * email: Email address if publicly available
+        * phone: Phone number if publicly available
+        
+        IMPORTANT for STEP 4:
+        - If you see a person's name on a page, their title is almost ALWAYS displayed nearby
+        - Don't just copy names without titles - READ the entire section carefully
+        - On LinkedIn company pages, click "People" or "Employees" to see leadership with titles
+        - On company About pages, titles are usually in format "Name - Title" or "Name, Title"
+        - Prioritize C-level (CEO, CTO, CFO, CMO) and VP-level executives
+        - Focus on technical/business decision-makers
+        - Limit to top 5 most senior contacts
 
         IMPORTANT RULES:
         1. Only return data you can VERIFY from reliable sources
@@ -159,14 +174,29 @@ async def run_sift_agent(company_name: str) -> CompanyProfile:
         - Skip academic papers, job boards, or irrelevant links
         - Limit to top 5 most relevant signals
 
-        STEP 4 - KEY CONTACTS:
-        - Search for "{company_name} leadership team" or go to About/Team page
-        - Focus on decision-makers: C-level, VPs, Directors
-        - Extract:
-        * name (full name)
-        * title (exact job title, e.g., "Chief Technology Officer", "VP of Engineering")
-        - Prioritize technical/business decision-makers
-        - Limit to top 5 contacts
+        STEP 4 - KEY CONTACTS (CRITICAL - Follow carefully):
+        - Search for "{company_name} leadership team" OR go to company About/Team/Leadership page
+        - Also try: "{company_name} executives" OR "{company_name} management team"
+        - Look for LinkedIn profiles by searching: "site:linkedin.com {company_name} CTO" or similar
+        
+        For EACH contact, you MUST extract:
+        * name: Full name of the person (REQUIRED)
+        * title: Their EXACT job title as shown on the page (e.g., "Chief Technology Officer", "VP of Engineering", "Head of Product", "Co-Founder & CTO")
+          - DO NOT leave title as null if you find the person's name
+          - The title is usually RIGHT NEXT TO or BELOW the person's name
+          - Look for keywords: CEO, CTO, CFO, VP, Director, Head, Chief, President, Manager
+        * linkedin: Full LinkedIn profile URL if available (e.g., "https://linkedin.com/in/john-doe")
+        * email: Email address if publicly available
+        * phone: Phone number if publicly available
+        
+        IMPORTANT for STEP 4:
+        - If you see a person's name on a page, their title is almost ALWAYS displayed nearby
+        - Don't just copy names without titles - READ the entire section carefully
+        - On LinkedIn company pages, click "People" or "Employees" to see leadership with titles
+        - On company About pages, titles are usually in format "Name - Title" or "Name, Title"
+        - Prioritize C-level (CEO, CTO, CFO, CMO) and VP-level executives
+        - Focus on technical/business decision-makers
+        - Limit to top 5 most senior contacts
 
         IMPORTANT RULES:
         1. Only return data you can VERIFY from reliable sources

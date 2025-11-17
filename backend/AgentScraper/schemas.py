@@ -23,7 +23,10 @@ class NewsSignal(BaseModel):
 class KeyContact(BaseModel):
     # Nama wajib ada, tapi jabatan (title) opsional
     name: str = Field(..., description="The full name of the contact person.")
-    title: Optional[str] = Field(default=None, description="The job title of the contact, e.g., 'CTO' or 'Head of Engineering'")
+    title: Optional[str] = Field(default=None, description="The job title of the contact, e.g., 'Chief Technology Officer', 'VP of Engineering', 'Head of Product'")
+    linkedin: Optional[str] = Field(default=None, description="LinkedIn profile URL of the contact person")
+    email: Optional[str] = Field(default=None, description="Email address of the contact person")
+    phone: Optional[str] = Field(default=None, description="Phone number of the contact person")
 
 class CompanyProfile(BaseModel):
     company_name: str = Field(..., description="The official name of the company being profiled.")

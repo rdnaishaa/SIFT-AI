@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, ChevronDown } from "lucide-react";
+import { Search, ChevronDown, MoreVertical, Trash2 } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
 import { profileAPI } from "../services/api";
 import LogModal from "../components/LogModal";
@@ -16,6 +16,11 @@ export default function Dashboard() {
   const [generating, setGenerating] = useState(false);
   const [activeTab, setActiveTab] = useState("dashboard");
   const [viewLoadingId, setViewLoadingId] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [openDropdownId, setOpenDropdownId] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [profileToDelete, setProfileToDelete] = useState(null);
 
   // SSE State
   const [showLogModal, setShowLogModal] = useState(false);
@@ -161,6 +166,58 @@ export default function Dashboard() {
     navigate(`/detail/${profileId}`);
   };
 
+  // Toggle dropdown menu
+  const toggleDropdown = (profileId, event) => {
+    event.stopPropagation();
+    setOpenDropdownId(openDropdownId === profileId ? null : profileId);
+  };
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = () => {
+      if (openDropdownId) {
+        setOpenDropdownId(null);
+      }
+    };
+    document.addEventListener("click", handleClickOutside);
+    return () => document.removeEventListener("click", handleClickOutside);
+  }, [openDropdownId]);
+
+  // Handle delete button click
+  const handleDeleteClick = (profile, event) => {
+    event.stopPropagation();
+    setProfileToDelete(profile);
+    setShowDeleteConfirm(true);
+    setOpenDropdownId(null);
+  };
+
+  // Handle delete confirmation
+  const handleDeleteConfirm = async () => {
+    if (!profileToDelete) return;
+
+    const profileId = profileToDelete.profile_id || profileToDelete.id;
+    setDeletingId(profileId);
+
+    try {
+      await profileAPI.deleteProfile(profileId);
+      // Refresh profiles
+      await fetchProfiles();
+      setShowDeleteConfirm(false);
+      setProfileToDelete(null);
+    } catch (error) {
+      console.error("Error deleting profile:", error);
+      alert(error.message || "Failed to delete profile");
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  // Handle cancel delete
+  const handleCancelDelete = () => {
+    setShowDeleteConfirm(false);
+    setProfileToDelete(null);
+  };
+
   // Format relative time
   const formatRelativeTime = (dateString) => {
     const date = new Date(dateString);
@@ -175,8 +232,85 @@ export default function Dashboard() {
     return `${Math.floor(diffDays / 30)} Months Ago`;
   };
 
+  // Filter profiles based on search query
+  const filterProfiles = (items) => {
+    if (!searchQuery.trim()) return items;
+
+    const query = searchQuery.toLowerCase();
+    return items.filter((profile) => {
+      const companyName = profile.company_name?.toLowerCase() || "";
+      const industry = profile.overview?.industry?.toLowerCase() || "";
+      const location = profile.overview?.location?.toLowerCase() || "";
+      const summary = profile.executive_summary?.toLowerCase() || "";
+
+      return (
+        companyName.includes(query) ||
+        industry.includes(query) ||
+        location.includes(query) ||
+        summary.includes(query)
+      );
+    });
+  };
+
   return (
     <div className="min-h-screen bg-[#0F1113] text-white flex">
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-[#1A1D21] border border-gray-700 rounded-2xl p-6 max-w-md w-full mx-4">
+            <h3 className="text-xl font-semibold mb-4">Delete Profile</h3>
+            <p className="text-gray-400 mb-6">
+              Are you sure you want to delete the profile for{" "}
+              <span className="text-white font-semibold">
+                {profileToDelete?.company_name}
+              </span>
+              ? This action cannot be undone.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={handleCancelDelete}
+                disabled={deletingId}
+                className="flex-1 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg font-medium transition disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteConfirm}
+                disabled={deletingId}
+                className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg font-medium transition disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {deletingId ? (
+                  <>
+                    <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24">
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                        fill="none"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                      ></path>
+                    </svg>
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 size={18} />
+                    Delete
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Log Modal for SSE Streaming */}
       <LogModal
         isOpen={showLogModal}
@@ -275,8 +409,10 @@ export default function Dashboard() {
                 />
                 <input
                   type="text"
-                  placeholder="Search"
-                  className="w-full bg-[#2A2D33] border border-gray-700 rounded-lg pl-10 pr-4 py-2 text-sm text-white placeholder-gray-500 outline-none focus:border-gray-600 transition"
+                  placeholder="Search profiles by company name, industry, or location..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full bg-[#2A2D33] border border-gray-700 rounded-lg pl-10 pr-4 py-2 text-sm text-white placeholder-gray-500 outline-none focus:border-[#5B9FED] transition"
                 />
               </div>
             </div>
@@ -387,6 +523,10 @@ export default function Dashboard() {
                     : activeTab === "favorites"
                     ? favorites
                     : historyItems;
+
+                // Apply search filter
+                const filteredItems = filterProfiles(items);
+
                 if (!items || items.length === 0) {
                   return (
                     <div className="text-center py-20">
@@ -402,13 +542,53 @@ export default function Dashboard() {
                   );
                 }
 
+                if (filteredItems.length === 0) {
+                  return (
+                    <div className="text-center py-20">
+                      <div className="text-gray-500 mb-4">No results found</div>
+                      <p className="text-gray-600 text-sm">
+                        No profiles match your search "{searchQuery}"
+                      </p>
+                    </div>
+                  );
+                }
+
                 return (
                   <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {items.slice(0, 6).map((profile) => (
+                    {filteredItems.slice(0, 6).map((profile) => (
                       <div
                         key={profile.profile_id || profile.id}
-                        className="bg-[#1A1D21] border border-gray-700 rounded-2xl p-6 hover:border-[#5B9FED] transition-all"
+                        className="bg-[#1A1D21] border border-gray-700 rounded-2xl p-6 hover:border-[#5B9FED] transition-all relative"
                       >
+                        {/* Dropdown Menu Button */}
+                        <div className="absolute top-4 right-4">
+                          <button
+                            onClick={(e) =>
+                              toggleDropdown(
+                                profile.profile_id || profile.id,
+                                e
+                              )
+                            }
+                            className="text-gray-500 hover:text-white transition p-1 rounded-lg hover:bg-gray-800"
+                          >
+                            <MoreVertical size={20} />
+                          </button>
+
+                          {/* Dropdown Menu */}
+                          {openDropdownId ===
+                            (profile.profile_id || profile.id) && (
+                            <div className="absolute right-0 mt-2 w-40 bg-[#2A2D33] border border-gray-700 rounded-lg shadow-lg z-10">
+                              <button
+                                onClick={(e) => handleDeleteClick(profile, e)}
+                                className="w-full px-4 py-2 text-left text-red-400 hover:bg-gray-800 rounded-lg flex items-center gap-2 transition"
+                              >
+                                <Trash2 size={16} />
+                                Delete
+                              </button>
+                            </div>
+                          )}
+                        </div>
+
                         <div className="flex justify-center mb-4">
                           <div className="w-16 h-16 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center">
                             <span className="text-2xl font-bold text-white">
