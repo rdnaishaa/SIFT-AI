@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 import {
   Search,
   ChevronDown,
@@ -316,11 +317,12 @@ export default function Dashboard() {
       await profileAPI.deleteProfile(profileId);
       // Refresh profiles
       await fetchProfiles();
+      toast.success("Profile deleted successfully");
       setShowDeleteConfirm(false);
       setProfileToDelete(null);
     } catch (error) {
       console.error("Error deleting profile:", error);
-      alert(error.message || "Failed to delete profile");
+      toast.error(error.message || "Failed to delete profile");
     } finally {
       setDeletingId(null);
     }
@@ -358,7 +360,7 @@ export default function Dashboard() {
       });
     } catch (error) {
       console.error("Error toggling favorite:", error);
-      alert(error.message || "Failed to toggle favorite");
+      toast.error(error.message || "Failed to toggle favorite");
     } finally {
       setFavoriteLoadingId(null);
     }

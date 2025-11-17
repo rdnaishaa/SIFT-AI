@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 import { useAuth } from "../hooks/useAuth";
 
 const Register = () => {
@@ -18,20 +19,27 @@ const Register = () => {
     setErrorMessage("");
 
     if (password !== retypePassword) {
-      setErrorMessage("Passwords do not match!");
+      const message = "Passwords do not match!";
+      setErrorMessage(message);
+      toast.error(message);
       return;
     }
     if (!acceptTerms) {
-      setErrorMessage("Please accept the terms and conditions");
+      const message = "Please accept the terms and conditions";
+      setErrorMessage(message);
+      toast.error(message);
       return;
     }
 
     setLoading(true);
     try {
       await register(username, email, password);
+      toast.success("Account created successfully!");
       navigate("/dashboard");
     } catch (err) {
-      setErrorMessage(err.message || "Registration failed. Please try again.");
+      const message = err.message || "Registration failed. Please try again.";
+      setErrorMessage(message);
+      toast.error(message);
     } finally {
       setLoading(false);
     }

@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import toast from "react-hot-toast";
 import { profileAPI } from "../services/api";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -46,7 +47,7 @@ export default function DetailPage() {
       console.log("Fetched profile data:", data);
     } catch (error) {
       console.error("Error fetching profile:", error);
-      alert(error.message || "Failed to load profile");
+      toast.error(error.message || "Failed to load profile");
     } finally {
       setLoading(false);
     }
@@ -83,11 +84,11 @@ export default function DetailPage() {
     setDeleting(true);
     try {
       await profileAPI.deleteProfile(id);
-      alert("Profile deleted successfully");
+      toast.success("Profile deleted successfully");
       navigate("/dashboard");
     } catch (error) {
       console.error("Error deleting profile:", error);
-      alert(error.message || "Failed to delete profile");
+      toast.error(error.message || "Failed to delete profile");
       setDeleting(false);
       setShowDeleteConfirm(false);
     }
@@ -102,9 +103,14 @@ export default function DetailPage() {
         ...prev,
         is_favorite: updatedProfile.is_favorite,
       }));
+      toast.success(
+        updatedProfile.is_favorite
+          ? "Added to favorites"
+          : "Removed from favorites"
+      );
     } catch (error) {
       console.error("Error toggling favorite:", error);
-      alert(error.message || "Failed to toggle favorite");
+      toast.error(error.message || "Failed to toggle favorite");
     } finally {
       setFavoriteLoading(false);
     }
@@ -116,7 +122,7 @@ export default function DetailPage() {
       console.log("Download PDF clicked!", profile);
 
       if (!profile) {
-        alert("No profile data available to download");
+        toast.error("No profile data available to download");
         return;
       }
 
@@ -489,9 +495,10 @@ export default function DetailPage() {
       }.pdf`;
       doc.save(fileName);
       console.log("PDF saved successfully:", fileName);
+      toast.success("PDF downloaded successfully");
     } catch (error) {
       console.error("Error generating PDF:", error);
-      alert("Failed to generate PDF: " + error.message);
+      toast.error("Failed to generate PDF: " + error.message);
     }
   };
 
