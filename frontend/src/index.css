@@ -1,1 +1,10 @@
 @import "tailwindcss";
+
+/* Global styles */
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}

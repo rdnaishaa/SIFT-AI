@@ -234,7 +234,7 @@ export default function Dashboard() {
 
     try {
       const updatedProfile = await profileAPI.toggleFavorite(profileId);
-      
+
       // Update profiles state immediately
       setProfiles((prevProfiles) => {
         const newProfiles = prevProfiles.map((p) =>
@@ -242,12 +242,12 @@ export default function Dashboard() {
             ? { ...p, is_favorite: updatedProfile.is_favorite }
             : p
         );
-        
+
         // Also update favorites if we're in that tab
         if (activeTab === "favorites") {
           setFavorites(newProfiles.filter((p) => p.is_favorite === true));
         }
-        
+
         return newProfiles;
       });
     } catch (error) {
@@ -621,7 +621,9 @@ export default function Dashboard() {
                           >
                             <Star
                               size={20}
-                              fill={profile.is_favorite ? "currentColor" : "none"}
+                              fill={
+                                profile.is_favorite ? "currentColor" : "none"
+                              }
                             />
                           </button>
                         </div>
