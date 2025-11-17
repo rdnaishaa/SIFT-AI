@@ -1,6 +1,16 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, ChevronDown, MoreVertical, Trash2, Star } from "lucide-react";
+import {
+  Search,
+  ChevronDown,
+  MoreVertical,
+  Trash2,
+  Star,
+  Settings,
+  X,
+  Edit2,
+  Save,
+} from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
 import { profileAPI } from "../services/api";
 import LogModal from "../components/LogModal";
@@ -22,6 +32,18 @@ export default function Dashboard() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [profileToDelete, setProfileToDelete] = useState(null);
   const [favoriteLoadingId, setFavoriteLoadingId] = useState(null);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [editFormData, setEditFormData] = useState({
+    username: "",
+    email: "",
+    current_password: "",
+    new_password: "",
+    confirm_password: "",
+  });
+  const [updateError, setUpdateError] = useState("");
+  const [updateSuccess, setUpdateSuccess] = useState("");
+  const [updating, setUpdating] = useState(false);
 
   // SSE State
   const [showLogModal, setShowLogModal] = useState(false);
@@ -31,7 +53,7 @@ export default function Dashboard() {
   const eventSourceRef = useRef(null);
 
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
+  const { user, logout, updateUser } = useAuth();
 
   useEffect(() => {
     fetchProfiles();
@@ -61,13 +83,11 @@ export default function Dashboard() {
   const fetchHistory = async () => {
     setHistoryLoading(true);
     try {
-      // Fallback: if profiles have `last_viewed_at`, sort by it
-      const fallback = profiles
-        .filter((p) => p.last_viewed_at)
-        .sort(
-          (a, b) => new Date(b.last_viewed_at) - new Date(a.last_viewed_at)
-        );
-      setHistoryItems(fallback);
+      // Use all profiles sorted by created_at (most recent first) as history
+      const sortedProfiles = [...profiles].sort(
+        (a, b) => new Date(b.created_at) - new Date(a.created_at)
+      );
+      setHistoryItems(sortedProfiles);
     } catch (err) {
       console.error("Error fetching history:", err);
     } finally {
@@ -154,6 +174,92 @@ export default function Dashboard() {
     if (generatedProfileId) {
       navigate(`/detail/${generatedProfileId}`);
       handleCloseLogModal();
+    }
+  };
+
+  // Handle edit mode toggle
+  const handleEditToggle = () => {
+    if (!editMode) {
+      // Entering edit mode, populate form
+      setEditFormData({
+        username: user?.username || "",
+        email: user?.email || "",
+        current_password: "",
+        new_password: "",
+        confirm_password: "",
+      });
+      setUpdateError("");
+      setUpdateSuccess("");
+    }
+    setEditMode(!editMode);
+  };
+
+  // Handle form input changes
+  const handleFormChange = (e) => {
+    const { name, value } = e.target;
+    setEditFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+    setUpdateError("");
+    setUpdateSuccess("");
+  };
+
+  // Handle update submit
+  const handleUpdateSubmit = async () => {
+    setUpdateError("");
+    setUpdateSuccess("");
+
+    // Validation
+    if (
+      editFormData.new_password &&
+      editFormData.new_password !== editFormData.confirm_password
+    ) {
+      setUpdateError("New passwords do not match");
+      return;
+    }
+
+    if (editFormData.new_password && !editFormData.current_password) {
+      setUpdateError("Current password is required to change password");
+      return;
+    }
+
+    setUpdating(true);
+
+    try {
+      const updateData = {};
+
+      // Only send changed fields
+      if (editFormData.username !== user?.username) {
+        updateData.username = editFormData.username;
+      }
+      if (editFormData.email !== user?.email) {
+        updateData.email = editFormData.email;
+      }
+      if (editFormData.new_password) {
+        updateData.current_password = editFormData.current_password;
+        updateData.new_password = editFormData.new_password;
+      }
+
+      // Check if there are any changes
+      if (Object.keys(updateData).length === 0) {
+        setUpdateError("No changes detected");
+        setUpdating(false);
+        return;
+      }
+
+      await updateUser(updateData);
+      setUpdateSuccess("Profile updated successfully!");
+      setEditMode(false);
+
+      // Clear form after successful update
+      setTimeout(() => {
+        setUpdateSuccess("");
+      }, 3000);
+    } catch (error) {
+      setUpdateError(error.message || "Failed to update profile");
+    } finally {
+      setUpdating(false);
     }
   };
 
@@ -360,6 +466,250 @@ export default function Dashboard() {
         onNavigate={handleViewGeneratedProfile}
       />
 
+      {/* Settings Modal */}
+      {showSettingsModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-[#1A1D21] border border-gray-700 rounded-2xl p-6 max-w-md w-full mx-4">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-semibold flex items-center gap-2">
+                <Settings size={24} className="text-[#5B9FED]" />
+                Settings
+              </h3>
+              <div className="flex items-center gap-2">
+                {!editMode && (
+                  <button
+                    onClick={handleEditToggle}
+                    className="text-gray-400 hover:text-white transition"
+                    title="Edit Profile"
+                  >
+                    <Edit2 size={20} />
+                  </button>
+                )}
+                <button
+                  onClick={() => {
+                    setShowSettingsModal(false);
+                    setEditMode(false);
+                    setUpdateError("");
+                    setUpdateSuccess("");
+                  }}
+                  className="text-gray-400 hover:text-white transition"
+                >
+                  <X size={24} />
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-6">
+              {/* Error/Success Messages */}
+              {updateError && (
+                <div className="bg-red-500/10 border border-red-500 text-red-500 px-4 py-2 rounded-lg text-sm">
+                  {updateError}
+                </div>
+              )}
+              {updateSuccess && (
+                <div className="bg-green-500/10 border border-green-500 text-green-500 px-4 py-2 rounded-lg text-sm">
+                  {updateSuccess}
+                </div>
+              )}
+
+              {/* User Information */}
+              <div>
+                <h4 className="text-sm font-semibold text-gray-400 mb-3">
+                  Account Information
+                </h4>
+
+                {!editMode ? (
+                  // View Mode
+                  <div className="bg-[#2A2D33] border border-gray-700 rounded-lg p-4 space-y-3">
+                    <div>
+                      <label className="text-xs text-gray-500">Username</label>
+                      <div className="text-white font-medium">
+                        {user?.username || "N/A"}
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-500">Email</label>
+                      <div className="text-white">{user?.email || "N/A"}</div>
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-500">User ID</label>
+                      <div className="text-gray-400 text-sm font-mono">
+                        {user?.user_id || "N/A"}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  // Edit Mode
+                  <div className="bg-[#2A2D33] border border-gray-700 rounded-lg p-4 space-y-4">
+                    <div>
+                      <label className="text-xs text-gray-400 mb-1 block">
+                        Username
+                      </label>
+                      <input
+                        type="text"
+                        name="username"
+                        value={editFormData.username}
+                        onChange={handleFormChange}
+                        className="w-full px-3 py-2 bg-[#1A1D21] border border-gray-600 rounded-lg text-white focus:outline-none focus:border-[#5B9FED]"
+                        placeholder="Enter username"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-400 mb-1 block">
+                        Email
+                      </label>
+                      <input
+                        type="email"
+                        name="email"
+                        value={editFormData.email}
+                        onChange={handleFormChange}
+                        className="w-full px-3 py-2 bg-[#1A1D21] border border-gray-600 rounded-lg text-white focus:outline-none focus:border-[#5B9FED]"
+                        placeholder="Enter email"
+                      />
+                    </div>
+
+                    <div className="pt-3 border-t border-gray-600">
+                      <h5 className="text-xs font-semibold text-gray-400 mb-3">
+                        Change Password (Optional)
+                      </h5>
+                      <div className="space-y-3">
+                        <div>
+                          <label className="text-xs text-gray-400 mb-1 block">
+                            Current Password
+                          </label>
+                          <input
+                            type="password"
+                            name="current_password"
+                            value={editFormData.current_password}
+                            onChange={handleFormChange}
+                            className="w-full px-3 py-2 bg-[#1A1D21] border border-gray-600 rounded-lg text-white focus:outline-none focus:border-[#5B9FED]"
+                            placeholder="Enter current password"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-xs text-gray-400 mb-1 block">
+                            New Password
+                          </label>
+                          <input
+                            type="password"
+                            name="new_password"
+                            value={editFormData.new_password}
+                            onChange={handleFormChange}
+                            className="w-full px-3 py-2 bg-[#1A1D21] border border-gray-600 rounded-lg text-white focus:outline-none focus:border-[#5B9FED]"
+                            placeholder="Enter new password"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-xs text-gray-400 mb-1 block">
+                            Confirm New Password
+                          </label>
+                          <input
+                            type="password"
+                            name="confirm_password"
+                            value={editFormData.confirm_password}
+                            onChange={handleFormChange}
+                            className="w-full px-3 py-2 bg-[#1A1D21] border border-gray-600 rounded-lg text-white focus:outline-none focus:border-[#5B9FED]"
+                            placeholder="Confirm new password"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Statistics */}
+              <div>
+                <h4 className="text-sm font-semibold text-gray-400 mb-3">
+                  Statistics
+                </h4>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-[#2A2D33] border border-gray-700 rounded-lg p-3">
+                    <div className="text-xs text-gray-500 mb-1">
+                      Total Profiles
+                    </div>
+                    <div className="text-2xl font-bold text-[#5B9FED]">
+                      {profiles.length}
+                    </div>
+                  </div>
+                  <div className="bg-[#2A2D33] border border-gray-700 rounded-lg p-3">
+                    <div className="text-xs text-gray-500 mb-1">Favorites</div>
+                    <div className="text-2xl font-bold text-yellow-400">
+                      {profiles.filter((p) => p.is_favorite).length}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-3 pt-4 border-t border-gray-700">
+                {editMode ? (
+                  <>
+                    <button
+                      onClick={() => {
+                        setEditMode(false);
+                        setUpdateError("");
+                        setUpdateSuccess("");
+                      }}
+                      disabled={updating}
+                      className="flex-1 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg font-medium transition disabled:opacity-50"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleUpdateSubmit}
+                      disabled={updating}
+                      className="flex-1 px-4 py-2 bg-[#5B9FED] hover:bg-[#4A8FDD] rounded-lg font-medium transition disabled:opacity-50 flex items-center justify-center gap-2"
+                    >
+                      {updating ? (
+                        <>
+                          <svg
+                            className="animate-spin w-4 h-4"
+                            viewBox="0 0 24 24"
+                          >
+                            <circle
+                              className="opacity-25"
+                              cx="12"
+                              cy="12"
+                              r="10"
+                              stroke="currentColor"
+                              strokeWidth="4"
+                              fill="none"
+                            ></circle>
+                            <path
+                              className="opacity-75"
+                              fill="currentColor"
+                              d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                            ></path>
+                          </svg>
+                          Saving...
+                        </>
+                      ) : (
+                        <>
+                          <Save size={18} />
+                          Save Changes
+                        </>
+                      )}
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    onClick={() => {
+                      setShowSettingsModal(false);
+                      setUpdateError("");
+                      setUpdateSuccess("");
+                    }}
+                    className="flex-1 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg font-medium transition"
+                  >
+                    Close
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Sidebar */}
       <aside className="w-48 bg-[#1A1D21] border-r border-gray-800 flex flex-col">
         {/* Logo */}
@@ -410,9 +760,12 @@ export default function Dashboard() {
 
         {/* Bottom Navigation */}
         <div className="p-4 border-t border-gray-800 space-y-2">
-          <button className="w-full text-left px-4 py-3 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg font-medium transition flex items-center gap-2">
+          <button
+            onClick={() => setShowSettingsModal(true)}
+            className="w-full text-left px-4 py-3 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg font-medium transition flex items-center gap-2"
+          >
+            <Settings size={18} />
             Settings
-            <span className="text-xs">...</span>
           </button>
           <button
             onClick={logout}
@@ -465,7 +818,6 @@ export default function Dashboard() {
                 </div>
                 <div className="text-xs text-gray-500">User</div>
               </div>
-              <ChevronDown size={16} className="text-gray-400" />
             </div>
           </div>
         </header>
@@ -593,6 +945,142 @@ export default function Dashboard() {
                   );
                 }
 
+                // Render History as Table
+                if (activeTab === "history") {
+                  return (
+                    <div className="bg-[#1A1D21] border border-gray-700 rounded-2xl overflow-hidden">
+                      <table className="w-full">
+                        <thead className="bg-[#2A2D33] border-b border-gray-700">
+                          <tr>
+                            <th className="px-6 py-4 text-left text-sm font-semibold text-gray-300">
+                              Company Name
+                            </th>
+                            <th className="px-6 py-4 text-left text-sm font-semibold text-gray-300">
+                              Industry
+                            </th>
+                            <th className="px-6 py-4 text-left text-sm font-semibold text-gray-300">
+                              Location
+                            </th>
+                            <th className="px-6 py-4 text-left text-sm font-semibold text-gray-300">
+                              Created
+                            </th>
+                            <th className="px-6 py-4 text-left text-sm font-semibold text-gray-300">
+                              Favorite
+                            </th>
+                            <th className="px-6 py-4 text-center text-sm font-semibold text-gray-300">
+                              Actions
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {filteredItems.map((profile) => (
+                            <tr
+                              key={profile.profile_id || profile.id}
+                              className="border-b border-gray-800 hover:bg-[#252830] transition"
+                            >
+                              <td className="px-6 py-4">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-10 h-10 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center shrink-0">
+                                    <span className="text-sm font-bold text-white">
+                                      {profile.company_name
+                                        ? profile.company_name
+                                            .charAt(0)
+                                            .toUpperCase()
+                                        : "U"}
+                                    </span>
+                                  </div>
+                                  <span className="text-white font-medium">
+                                    {profile.company_name}
+                                  </span>
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 text-gray-400 text-sm">
+                                {profile.overview?.industry || "N/A"}
+                              </td>
+                              <td className="px-6 py-4 text-gray-400 text-sm">
+                                {profile.overview?.location || "N/A"}
+                              </td>
+                              <td className="px-6 py-4 text-gray-400 text-sm">
+                                {profile.created_at
+                                  ? formatRelativeTime(profile.created_at)
+                                  : "N/A"}
+                              </td>
+                              <td className="px-6 py-4">
+                                <button
+                                  onClick={(e) =>
+                                    handleToggleFavorite(profile, e)
+                                  }
+                                  disabled={
+                                    favoriteLoadingId ===
+                                    (profile.profile_id || profile.id)
+                                  }
+                                  className={`transition p-1 rounded-lg ${
+                                    profile.is_favorite
+                                      ? "text-yellow-400 hover:text-yellow-500"
+                                      : "text-gray-500 hover:text-yellow-400"
+                                  } ${
+                                    favoriteLoadingId ===
+                                    (profile.profile_id || profile.id)
+                                      ? "opacity-50"
+                                      : ""
+                                  }`}
+                                >
+                                  <Star
+                                    size={18}
+                                    fill={
+                                      profile.is_favorite
+                                        ? "currentColor"
+                                        : "none"
+                                    }
+                                  />
+                                </button>
+                              </td>
+                              <td className="px-6 py-4">
+                                <div className="flex items-center justify-center gap-2">
+                                  <button
+                                    onClick={() => viewDetails(profile)}
+                                    className="px-3 py-1.5 bg-[#5B9FED] hover:bg-[#4A8DD9] rounded-lg text-xs font-medium transition text-white"
+                                  >
+                                    View Details
+                                  </button>
+                                  <div className="relative">
+                                    <button
+                                      onClick={(e) =>
+                                        toggleDropdown(
+                                          profile.profile_id || profile.id,
+                                          e
+                                        )
+                                      }
+                                      className="text-gray-500 hover:text-white transition p-1 rounded-lg hover:bg-gray-800"
+                                    >
+                                      <MoreVertical size={18} />
+                                    </button>
+                                    {openDropdownId ===
+                                      (profile.profile_id || profile.id) && (
+                                      <div className="absolute right-0 mt-2 w-40 bg-[#2A2D33] border border-gray-700 rounded-lg shadow-lg z-10">
+                                        <button
+                                          onClick={(e) =>
+                                            handleDeleteClick(profile, e)
+                                          }
+                                          className="w-full px-4 py-2 text-left text-red-400 hover:bg-gray-800 rounded-lg flex items-center gap-2 transition"
+                                        >
+                                          <Trash2 size={16} />
+                                          Delete
+                                        </button>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  );
+                }
+
+                // Render Dashboard and Favorites as Cards
                 return (
                   <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {filteredItems.slice(0, 6).map((profile) => (

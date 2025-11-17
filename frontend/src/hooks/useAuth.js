@@ -64,6 +64,18 @@ export const useAuth = () => {
     navigate("/login");
   };
 
+  const updateUserInfo = async (updateData) => {
+    try {
+      setError(null);
+      const updatedUser = await authAPI.updateUser(updateData);
+      setUser(updatedUser);
+      return updatedUser;
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    }
+  };
+
   return {
     user,
     loading,
@@ -73,5 +85,6 @@ export const useAuth = () => {
     register,
     logout,
     checkAuth,
+    updateUser: updateUserInfo,
   };
 };

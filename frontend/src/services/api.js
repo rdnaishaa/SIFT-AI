@@ -153,6 +153,20 @@ export const authAPI = {
   getToken() {
     return localStorage.getItem("access_token");
   },
+
+  /**
+   * Update current user info
+   * @param {object} updateData - {username?, email?, current_password?, new_password?}
+   * @returns {Promise<object>}
+   */
+  async updateUser(updateData) {
+    const data = await apiClient.patch("/auth/me", updateData);
+
+    // Update stored user data
+    localStorage.setItem("user", JSON.stringify(data));
+
+    return data;
+  },
 };
 
 // ===== PROFILE API =====

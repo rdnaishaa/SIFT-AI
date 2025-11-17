@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, status, Depends
-from .models import UserRegister, UserLogin, TokenResponse, UserResponse, MessageResponse
+from .models import UserRegister, UserLogin, UserUpdate, TokenResponse, UserResponse, MessageResponse
 from .database import db
 from .auth import hash_password, verify_password, create_access_token, get_current_user
 import asyncpg
@@ -194,4 +194,135 @@ async def get_current_user_info(current_user: dict = Depends(get_current_user)):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to get user info: {str(e)}"
+        )
+
+
+@router.patch("/me", response_model=UserResponse)
+async def update_user(
+    user_data: UserUpdate,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Update informasi user yang sedang login.
+    
+    - **username**: Username baru (opsional)
+    - **email**: Email baru (opsional)
+    - **current_password**: Password saat ini (diperlukan untuk ganti password)
+    - **new_password**: Password baru (opsional)
+    
+    Requires: Bearer token di header Authorization
+    """
+    try:
+        # Validasi: jika ingin ganti password, harus kirim current_password dan new_password
+        if user_data.new_password and not user_data.current_password:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Current password is required to change password"
+            )
+        
+        # Jika ada perubahan password, verifikasi current_password
+        if user_data.current_password:
+            user = await db.fetch_one(
+                "SELECT password_hash FROM users WHERE user_id = $1",
+                current_user["user_id"]
+            )
+            
+            if not verify_password(user_data.current_password, user["password_hash"]):
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Current password is incorrect"
+                )
+        
+        # Build update query dynamically
+        update_fields = []
+        update_values = []
+        param_count = 1
+        
+        if user_data.username:
+            # Cek apakah username sudah dipakai user lain
+            existing_username = await db.fetch_one(
+                "SELECT user_id FROM users WHERE username = $1 AND user_id != $2",
+                user_data.username,
+                current_user["user_id"]
+            )
+            
+            if existing_username:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Username already taken"
+                )
+            
+            update_fields.append(f"username = ${param_count}")
+            update_values.append(user_data.username)
+            param_count += 1
+        
+        if user_data.email:
+            # Cek apakah email sudah dipakai user lain
+            existing_email = await db.fetch_one(
+                "SELECT user_id FROM users WHERE email = $1 AND user_id != $2",
+                user_data.email,
+                current_user["user_id"]
+            )
+            
+            if existing_email:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Email already registered"
+                )
+            
+            update_fields.append(f"email = ${param_count}")
+            update_values.append(user_data.email)
+            param_count += 1
+        
+        if user_data.new_password:
+            hashed_password = hash_password(user_data.new_password)
+            update_fields.append(f"password_hash = ${param_count}")
+            update_values.append(hashed_password)
+            param_count += 1
+        
+        # Jika tidak ada field yang diupdate
+        if not update_fields:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="No fields to update"
+            )
+        
+        # Add user_id to values
+        update_values.append(current_user["user_id"])
+        
+        # Execute update query
+        query = f"""
+            UPDATE users
+            SET {', '.join(update_fields)}
+            WHERE user_id = ${param_count}
+            RETURNING user_id, username, email, created_at
+        """
+        
+        updated_user = await db.fetch_one(query, *update_values)
+        
+        if not updated_user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found"
+            )
+        
+        return UserResponse(
+            user_id=str(updated_user["user_id"]),
+            username=updated_user["username"],
+            email=updated_user["email"],
+            created_at=updated_user["created_at"]
+        )
+    
+    except HTTPException:
+        raise
+    except asyncpg.UniqueViolationError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email or username already exists"
+        )
+    except Exception as e:
+        print(f"Error updating user: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to update user: {str(e)}"
         )
