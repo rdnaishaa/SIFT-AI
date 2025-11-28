@@ -172,65 +172,14 @@ export const authAPI = {
 // ===== PROFILE API =====
 export const profileAPI = {
   /**
-   * Create new company profile with AI intelligence
+   * Create new company profile with AI intelligence (Background Task)
    * @param {string} companyName
-   * @returns {Promise<object>}
+   * @returns {Promise<object>} Returns profile object with status 'processing'
    */
   async createProfile(companyName) {
     return await apiClient.post("/profiles/create", {
       company_name: companyName,
     });
-  },
-
-  /**
-   * Create profile with streaming logs (SSE)
-   * @param {string} companyName
-   * @param {function} onLog - Callback for each log message
-   * @param {function} onComplete - Callback when done with profileId
-   * @param {function} onError - Callback for errors
-   * @returns {EventSource}
-   */
-  createProfileStream(companyName, onLog, onComplete, onError) {
-    const token = authAPI.getToken();
-
-    // EventSource doesn't support custom headers or POST, so we pass token as query param
-    const url = `${API_BASE_URL}/profiles/create-stream?company_name=${encodeURIComponent(
-      companyName
-    )}&token=${token}`;
-
-    const eventSource = new EventSource(url);
-
-    eventSource.onmessage = (event) => {
-      const message = event.data;
-
-      if (message.startsWith("DONE|")) {
-        const profileId = message.split("|")[1];
-        eventSource.close();
-        if (onComplete) onComplete(profileId);
-      } else if (message.startsWith("ERROR|")) {
-        const errorMsg = message.split("|")[1];
-        eventSource.close();
-        if (onError) onError(errorMsg);
-      } else {
-        if (onLog) onLog(message);
-      }
-    };
-
-    eventSource.onerror = (error) => {
-      console.error("SSE Error:", error);
-      eventSource.close();
-      if (onError) onError("Connection error. Please try again.");
-    };
-
-    return eventSource;
-  },
-
-  /**
-   * Get all profiles for current user
-   * @returns {Promise<Array>}
-   */
-  async getMyProfiles() {
-    return await apiClient.get("/profiles/my-profiles");
   },
 
   /**
@@ -240,6 +189,14 @@ export const profileAPI = {
    */
   async getProfileById(profileId) {
     return await apiClient.get(`/profiles/${profileId}`);
+  },
+
+  /**
+   * Get all profiles for current user
+   * @returns {Promise<Array>}
+   */
+  async getMyProfiles() {
+    return await apiClient.get("/profiles/my-profiles");
   },
 
   /**

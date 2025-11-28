@@ -1,5 +1,3 @@
-
-
 import asyncio
 import sys
 
@@ -32,6 +30,15 @@ app = FastAPI(
 async def startup():
     """Connect ke database saat aplikasi start"""
     await db.connect()
+    
+    # Ensure status column exists
+    try:
+        await db.execute("""
+            ALTER TABLE company_profiles 
+            ADD COLUMN IF NOT EXISTS status VARCHAR(50) DEFAULT 'completed'
+        """)
+    except Exception as e:
+        print(f"Warning: Could not alter table: {e}")
 
 @app.on_event("shutdown")
 async def shutdown():

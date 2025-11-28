@@ -61,7 +61,7 @@ async def run_sift_agent_with_streaming(company_name: str):
           - DO NOT leave title as null if you find the person's name
           - The title is usually RIGHT NEXT TO or BELOW the person's name
           - Look for keywords: CEO, CTO, CFO, VP, Director, Head, Chief, President, Manager
-        * linkedin: Full LinkedIn profile URL if available (e.g., "https://linkedin.com/in/john-doe")
+        * linkedin: Full LinkedIn profile URL if available (e.g., "https://www.linkedin.com/in/dara-khosrowshahi-70949862/")
         * email: Email address if publicly available
         * phone: Phone number if publicly available
         
@@ -185,7 +185,7 @@ async def run_sift_agent(company_name: str) -> CompanyProfile:
           - DO NOT leave title as null if you find the person's name
           - The title is usually RIGHT NEXT TO or BELOW the person's name
           - Look for keywords: CEO, CTO, CFO, VP, Director, Head, Chief, President, Manager
-        * linkedin: Full LinkedIn profile URL if available (e.g., "https://linkedin.com/in/john-doe")
+        * linkedin: Full LinkedIn profile URL if available (e.g., "https://www.linkedin.com/in/dara-khosrowshahi-70949862/")
         * email: Email address if publicly available
         * phone: Phone number if publicly available
         

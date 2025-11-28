@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, status, Depends, Query
+from fastapi import APIRouter, HTTPException, status, Depends, Query, BackgroundTasks
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 from typing import Optional
@@ -24,6 +24,7 @@ class ProfileResponse(BaseModel):
     profile_id: str  # UUID
     user_id: str  # UUID
     company_name: str
+    status: Optional[str] = "completed"
     overview: Optional[dict] = None
     tech_stack: Optional[list] = None
     recent_news_signals: Optional[list] = None
@@ -38,6 +39,65 @@ class ProfileResponse(BaseModel):
     is_favorite: Optional[bool] = False
     
     created_at: str
+
+async def process_profile_background(profile_id: str, company_name: str):
+    """
+    Background task untuk memproses profile generation
+    """
+    try:
+        print(f"Starting background task for {company_name} (ID: {profile_id})")
+        
+        # Step 1: Run SIFT agent
+        profile_data = await run_sift_agent(company_name)
+        
+        # Step 2: Generate AI intelligence
+        intelligence = await enrich_profile_with_intelligence({
+            'company_name': company_name,
+            'overview': profile_data.overview.dict() if profile_data.overview else {},
+            'tech_stack': profile_data.tech_stack,
+            'recent_news_signals': [news.dict() for news in profile_data.recent_news_signals] if profile_data.recent_news_signals else [],
+            'key_contacts': [contact.dict() for contact in profile_data.key_contacts] if profile_data.key_contacts else []
+        })
+        
+        # Prepare data
+        overview_json = json.dumps(profile_data.overview.dict()) if profile_data.overview else None
+        tech_stack_json = json.dumps(profile_data.tech_stack) if profile_data.tech_stack else None
+        recent_news_json = json.dumps([news.dict() for news in profile_data.recent_news_signals]) if profile_data.recent_news_signals else None
+        key_contacts_json = json.dumps([contact.dict() for contact in profile_data.key_contacts]) if profile_data.key_contacts else None
+        
+        executive_summary = intelligence.get('executive_summary')
+        pain_points_json = json.dumps(intelligence.get('pain_points', []))
+        opening_lines_json = json.dumps(intelligence.get('opening_lines', {}))
+        
+        data_sources = []
+        if profile_data.recent_news_signals:
+            for news in profile_data.recent_news_signals:
+                if hasattr(news, 'url') and news.url:
+                    data_sources.append(news.url)
+        data_sources_json = json.dumps(data_sources) if data_sources else None
+        
+        # Update database with results and status completed
+        await db.execute(
+            """
+            UPDATE company_profiles 
+            SET overview = $1, tech_stack = $2, recent_news_signals = $3, key_contacts = $4,
+                executive_summary = $5, pain_points = $6, opening_lines = $7, data_sources = $8,
+                last_analyzed_at = $9, status = 'completed'
+            WHERE profile_id = $10::uuid
+            """,
+            overview_json, tech_stack_json, recent_news_json, key_contacts_json,
+            executive_summary, pain_points_json, opening_lines_json, data_sources_json,
+            datetime.utcnow(), profile_id
+        )
+        print(f"Background task completed for {company_name}")
+        
+    except Exception as e:
+        print(f"Error in background task for {company_name}: {e}")
+        await db.execute(
+            "UPDATE company_profiles SET status = 'failed' WHERE profile_id = $1::uuid",
+            profile_id
+        )
+
 
 
 @router.get("/create-stream")
@@ -172,6 +232,7 @@ async def create_profile_stream(
 @router.post("/create", response_model=ProfileResponse, status_code=status.HTTP_201_CREATED)
 async def create_company_profile(
     request: CreateProfileRequest,
+    background_tasks: BackgroundTasks,
     current_user: dict = Depends(get_current_user)
 ):
     """
@@ -180,82 +241,44 @@ async def create_company_profile(
     **Requires**: Bearer token di header Authorization
     
     Endpoint ini akan:
-    1. Menjalankan SIFT AI agent untuk mendapatkan profil perusahaan
-    2. Menyimpan profil ke database
-    3. Mengembalikan profil yang telah disimpan
+    1. Membuat record profile dengan status 'processing'
+    2. Menjalankan SIFT AI agent di background
+    3. Mengembalikan ID profile untuk polling status
     """
     try:
-        # Step 1: Jalankan SIFT agent untuk mendapatkan profil perusahaan
-        profile_data: CompanyProfile = await run_sift_agent(request.company_name)
-        
-        # Step 2: Generate AI intelligence dari scraped data
-        print(f"Generating AI intelligence for {request.company_name}...")
-        intelligence = await enrich_profile_with_intelligence({
-            'company_name': request.company_name,
-            'overview': profile_data.overview.dict() if profile_data.overview else {},
-            'tech_stack': profile_data.tech_stack,
-            'recent_news_signals': [news.dict() for news in profile_data.recent_news_signals] if profile_data.recent_news_signals else [],
-            'key_contacts': [contact.dict() for contact in profile_data.key_contacts] if profile_data.key_contacts else []
-        })
-        
-        # Step 3: Prepare data untuk database
-        # Convert ke format yang bisa disimpan di JSONB
-        overview_json = json.dumps(profile_data.overview.dict()) if profile_data.overview else None
-        tech_stack_json = json.dumps(profile_data.tech_stack) if profile_data.tech_stack else None
-        recent_news_json = json.dumps([news.dict() for news in profile_data.recent_news_signals]) if profile_data.recent_news_signals else None
-        key_contacts_json = json.dumps([contact.dict() for contact in profile_data.key_contacts]) if profile_data.key_contacts else None
-        
-        # AI-generated intelligence
-        executive_summary = intelligence.get('executive_summary')
-        pain_points_json = json.dumps(intelligence.get('pain_points', []))
-        opening_lines_json = json.dumps(intelligence.get('opening_lines', {}))
-        
-        # Data sources (extract URLs from news signals - NewsSignal objects)
-        data_sources = []
-        if profile_data.recent_news_signals:
-            for news in profile_data.recent_news_signals:
-                if hasattr(news, 'url') and news.url:
-                    data_sources.append(news.url)
-        data_sources_json = json.dumps(data_sources) if data_sources else None
-        
-        # Step 4: Simpan ke database dengan AI intelligence
+        # Step 1: Create initial record
         new_profile = await db.fetch_one(
             """
             INSERT INTO company_profiles 
-            (user_id, company_name, overview, tech_stack, recent_news_signals, key_contacts,
-             executive_summary, pain_points, opening_lines, data_sources, last_analyzed_at)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-            RETURNING profile_id, user_id, company_name, overview, tech_stack, 
-                      recent_news_signals, key_contacts, executive_summary, pain_points,
-                      opening_lines, data_sources, last_analyzed_at, created_at
+            (user_id, company_name, status, created_at)
+            VALUES ($1, $2, 'processing', $3)
+            RETURNING profile_id, user_id, company_name, status, created_at
             """,
             current_user["user_id"],
             request.company_name,
-            overview_json,
-            tech_stack_json,
-            recent_news_json,
-            key_contacts_json,
-            executive_summary,
-            pain_points_json,
-            opening_lines_json,
-            data_sources_json,
             datetime.utcnow()
         )
         
+        profile_id = str(new_profile["profile_id"])
+        
+        # Step 2: Add to background tasks
+        background_tasks.add_task(process_profile_background, profile_id, request.company_name)
+        
         return ProfileResponse(
-            profile_id=str(new_profile["profile_id"]),  # Convert UUID to string
-            user_id=str(new_profile["user_id"]),  # Convert UUID to string
+            profile_id=profile_id,
+            user_id=str(new_profile["user_id"]),
             company_name=new_profile["company_name"],
-            overview=json.loads(new_profile["overview"]) if new_profile["overview"] else None,
-            tech_stack=json.loads(new_profile["tech_stack"]) if new_profile["tech_stack"] else None,
-            recent_news_signals=json.loads(new_profile["recent_news_signals"]) if new_profile["recent_news_signals"] else None,
-            key_contacts=json.loads(new_profile["key_contacts"]) if new_profile["key_contacts"] else None,
-            executive_summary=new_profile["executive_summary"],
-            pain_points=json.loads(new_profile["pain_points"]) if new_profile["pain_points"] else None,
-            opening_lines=json.loads(new_profile["opening_lines"]) if new_profile["opening_lines"] else None,
-            data_sources=json.loads(new_profile["data_sources"]) if new_profile["data_sources"] else None,
-            last_analyzed_at=str(new_profile["last_analyzed_at"]) if new_profile["last_analyzed_at"] else None,
+            status="processing",
             created_at=str(new_profile["created_at"])
+        )
+    
+    except HTTPException as http_exc:
+        raise http_exc
+    except Exception as e:
+        print(f"Error creating profile: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to create profile: {str(e)}"
         )
     
     except HTTPException as http_exc:
@@ -278,7 +301,7 @@ async def get_my_profiles(current_user: dict = Depends(get_current_user)):
     try:
         profiles = await db.fetch_all(
             """
-            SELECT profile_id, user_id, company_name, overview, tech_stack,
+            SELECT profile_id, user_id, company_name, status, overview, tech_stack,
                    recent_news_signals, key_contacts, executive_summary, pain_points,
                    opening_lines, data_sources, last_analyzed_at, is_favorite, created_at
             FROM company_profiles
@@ -294,6 +317,7 @@ async def get_my_profiles(current_user: dict = Depends(get_current_user)):
                 profile_id=str(profile["profile_id"]),  # Convert UUID to string
                 user_id=str(profile["user_id"]),  # Convert UUID to string
                 company_name=profile["company_name"],
+                status=profile["status"] if "status" in profile else "completed",
                 overview=json.loads(profile["overview"]) if profile["overview"] else None,
                 tech_stack=json.loads(profile["tech_stack"]) if profile["tech_stack"] else None,
                 recent_news_signals=json.loads(profile["recent_news_signals"]) if profile["recent_news_signals"] else None,
@@ -332,7 +356,7 @@ async def get_profile_by_id(
     try:
         profile = await db.fetch_one(
             """
-            SELECT profile_id, user_id, company_name, overview, tech_stack,
+            SELECT profile_id, user_id, company_name, status, overview, tech_stack,
                    recent_news_signals, key_contacts, executive_summary, pain_points,
                    opening_lines, data_sources, last_analyzed_at, is_favorite, created_at
             FROM company_profiles
@@ -352,6 +376,7 @@ async def get_profile_by_id(
             profile_id=str(profile["profile_id"]),  # Convert UUID to string
             user_id=str(profile["user_id"]),  # Convert UUID to string
             company_name=profile["company_name"],
+            status=profile["status"] if "status" in profile else "completed",
             overview=json.loads(profile["overview"]) if profile["overview"] else None,
             tech_stack=json.loads(profile["tech_stack"]) if profile["tech_stack"] else None,
             recent_news_signals=json.loads(profile["recent_news_signals"]) if profile["recent_news_signals"] else None,
@@ -454,7 +479,7 @@ async def toggle_favorite(
             UPDATE company_profiles 
             SET is_favorite = $1
             WHERE profile_id = $2::uuid AND user_id = $3
-            RETURNING profile_id, user_id, company_name, overview, tech_stack,
+            RETURNING profile_id, user_id, company_name, status, overview, tech_stack,
                       recent_news_signals, key_contacts, executive_summary, pain_points,
                       opening_lines, data_sources, last_analyzed_at, is_favorite, created_at
             """,
@@ -467,6 +492,7 @@ async def toggle_favorite(
             profile_id=str(updated_profile["profile_id"]),
             user_id=str(updated_profile["user_id"]),
             company_name=updated_profile["company_name"],
+            status=updated_profile["status"] if "status" in updated_profile else "completed",
             overview=json.loads(updated_profile["overview"]) if updated_profile["overview"] else None,
             tech_stack=json.loads(updated_profile["tech_stack"]) if updated_profile["tech_stack"] else None,
             recent_news_signals=json.loads(updated_profile["recent_news_signals"]) if updated_profile["recent_news_signals"] else None,

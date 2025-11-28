@@ -1,20 +1,19 @@
-import React, { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
-import toast from "react-hot-toast";
 import {
-  Search,
-  ChevronDown,
-  MoreVertical,
-  Trash2,
-  Star,
-  Settings,
-  X,
   Edit2,
+  Loader2,
+  MoreVertical,
   Save,
+  Search,
+  Settings,
+  Star,
+  Trash2,
+  X,
 } from "lucide-react";
+import { useEffect, useState } from "react";
+import toast from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { profileAPI } from "../services/api";
-import LogModal from "../components/LogModal";
 
 export default function Dashboard() {
   const [profiles, setProfiles] = useState([]);
@@ -46,12 +45,9 @@ export default function Dashboard() {
   const [updateSuccess, setUpdateSuccess] = useState("");
   const [updating, setUpdating] = useState(false);
 
-  // SSE State
-  const [showLogModal, setShowLogModal] = useState(false);
-  const [logs, setLogs] = useState([]);
-  const [isGenerationComplete, setIsGenerationComplete] = useState(false);
-  const [generatedProfileId, setGeneratedProfileId] = useState(null);
-  const eventSourceRef = useRef(null);
+  // Polling State
+  const [polling, setPolling] = useState(false);
+  const [pollingStatus, setPollingStatus] = useState("");
 
   const navigate = useNavigate();
   const { user, logout, updateUser } = useAuth();
@@ -97,8 +93,8 @@ export default function Dashboard() {
   };
 
   // Fetch profiles from backend
-  const fetchProfiles = async () => {
-    setLoading(true);
+  const fetchProfiles = async (isBackground = false) => {
+    if (!isBackground) setLoading(true);
     try {
       const data = await profileAPI.getMyProfiles();
       setProfiles(data);
@@ -111,72 +107,81 @@ export default function Dashboard() {
         navigate("/login");
       }
     } finally {
-      setLoading(false);
+      if (!isBackground) setLoading(false);
     }
   };
 
-  // Generate new profile with SSE streaming
+  // Poll for updates if any profile is processing
+  useEffect(() => {
+    const hasProcessing = profiles.some((p) => p.status === "processing");
+    if (hasProcessing) {
+      const interval = setInterval(() => {
+        fetchProfiles(true);
+      }, 3000);
+      return () => clearInterval(interval);
+    }
+  }, [profiles]);
+
+  // Generate new profile with Background Task + Polling
   const handleGenerateProfile = async () => {
     if (!companyInput.trim()) return;
 
     setGenerating(true);
-    setShowLogModal(true);
-    setLogs([]);
-    setIsGenerationComplete(false);
-    setGeneratedProfileId(null);
+    setPolling(true);
+    setPollingStatus("processing");
 
     try {
-      // Close any existing EventSource
-      if (eventSourceRef.current) {
-        eventSourceRef.current.close();
-      }
+      // 1. Start generation (returns immediately with status 'processing')
+      const initialProfile = await profileAPI.createProfile(companyInput);
+      const profileId = initialProfile.profile_id;
 
-      // Start SSE stream
-      eventSourceRef.current = profileAPI.createProfileStream(
-        companyInput,
-        // onLog callback
-        (logMessage) => {
-          setLogs((prev) => [...prev, logMessage]);
-        },
-        // onComplete callback
-        (profileId) => {
-          setIsGenerationComplete(true);
-          setGeneratedProfileId(profileId);
-          setGenerating(false);
-          setCompanyInput("");
-          // Refresh profile list
-          fetchProfiles();
-        },
-        // onError callback
-        (errorMsg) => {
-          setLogs((prev) => [...prev, `❌ Error: ${errorMsg}`]);
-          setIsGenerationComplete(true);
-          setGenerating(false);
+      // Add new profile to list immediately
+      setProfiles((prev) => [initialProfile, ...prev]);
+
+      toast.success("Profile generation started! Please wait...");
+      setCompanyInput(""); // Clear input
+
+      // 2. Poll for status
+      const pollInterval = setInterval(async () => {
+        try {
+          const profile = await profileAPI.getProfileById(profileId);
+
+          if (profile.status === "completed") {
+            clearInterval(pollInterval);
+            setGenerating(false);
+            setPolling(false);
+            setPollingStatus("completed");
+            toast.success("Profile generated successfully!");
+            navigate(`/detail/${profileId}`);
+          } else if (profile.status === "failed") {
+            clearInterval(pollInterval);
+            setGenerating(false);
+            setPolling(false);
+            setPollingStatus("failed");
+            toast.error("Profile generation failed.");
+          } else {
+            // Still processing
+            console.log("Still processing...");
+          }
+        } catch (err) {
+          console.error("Polling error:", err);
+          // Don't stop polling on transient errors
         }
-      );
+      }, 3000); // Check every 3 seconds
+
+      // Cleanup interval on component unmount (optional but good practice)
+      // In a real app, you might want to store the interval ID in a ref to clear it if the user navigates away
+      // For now, we let it run until completion or page refresh
     } catch (error) {
-      console.error("Error starting profile generation:", error);
-      setLogs((prev) => [...prev, `❌ Error: ${error.message}`]);
-      setIsGenerationComplete(true);
+      console.error("Error starting generation:", error);
+      toast.error(error.message || "Failed to start generation");
       setGenerating(false);
+      setPolling(false);
     }
   };
 
-  // Handle log modal close
-  const handleCloseLogModal = () => {
-    setShowLogModal(false);
-    setLogs([]);
-    setIsGenerationComplete(false);
-    setGeneratedProfileId(null);
-  };
-
-  // Navigate to generated profile
-  const handleViewGeneratedProfile = () => {
-    if (generatedProfileId) {
-      navigate(`/detail/${generatedProfileId}`);
-      handleCloseLogModal();
-    }
-  };
+  // Handle log modal close - REMOVED
+  // Navigate to generated profile - REMOVED
 
   // Handle edit mode toggle
   const handleEditToggle = () => {
@@ -264,14 +269,14 @@ export default function Dashboard() {
     }
   };
 
-  // Cleanup EventSource on unmount
-  useEffect(() => {
-    return () => {
-      if (eventSourceRef.current) {
-        eventSourceRef.current.close();
-      }
-    };
-  }, []);
+  // Cleanup EventSource on unmount - REMOVED
+  // useEffect(() => {
+  //   return () => {
+  //     if (eventSourceRef.current) {
+  //       eventSourceRef.current.close();
+  //     }
+  //   };
+  // }, []);
 
   // Navigate to detail page
   const viewDetails = (profile) => {
@@ -459,14 +464,14 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Log Modal for SSE Streaming */}
-      <LogModal
+      {/* Log Modal for SSE Streaming - REMOVED */}
+      {/* <LogModal
         isOpen={showLogModal}
         onClose={handleCloseLogModal}
         logs={logs}
         isComplete={isGenerationComplete}
         onNavigate={handleViewGeneratedProfile}
-      />
+      /> */}
 
       {/* Settings Modal */}
       {showSettingsModal && (
@@ -860,17 +865,41 @@ export default function Dashboard() {
                     onKeyPress={(e) =>
                       e.key === "Enter" && handleGenerateProfile()
                     }
-                    disabled={generating}
-                    className="flex-1 bg-[#2A2D33] border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 outline-none focus:border-[#5B9FED] transition disabled:opacity-50"
+                    disabled={
+                      generating ||
+                      loading ||
+                      profiles.some((p) => p.status === "processing")
+                    }
+                    className="flex-1 bg-[#2A2D33] border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 outline-none focus:border-[#5B9FED] transition disabled:opacity-50 disabled:cursor-not-allowed"
                   />
                   <button
                     onClick={handleGenerateProfile}
-                    disabled={generating || !companyInput.trim()}
-                    className="bg-[#5B9FED] hover:bg-[#4A8DD9] px-8 py-3 rounded-lg font-medium transition disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                    disabled={
+                      generating ||
+                      loading ||
+                      !companyInput.trim() ||
+                      profiles.some((p) => p.status === "processing")
+                    }
+                    className="bg-[#5B9FED] hover:bg-[#4A8DD9] px-8 py-3 rounded-lg font-medium transition disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap flex items-center gap-2"
                   >
-                    {generating ? "Generating..." : "Generate Profile"}
+                    {generating ||
+                    profiles.some((p) => p.status === "processing") ? (
+                      <>
+                        <Loader2 className="animate-spin" size={20} />
+                        Processing...
+                      </>
+                    ) : (
+                      "Generate Profile"
+                    )}
                   </button>
                 </div>
+                {generating && (
+                  <div className="mt-4 text-sm text-gray-400 flex items-center gap-2 animate-pulse">
+                    <div className="w-2 h-2 bg-[#5B9FED] rounded-full"></div>
+                    AI is analyzing {companyInput || "the company"}... This may
+                    take a few minutes. You can wait here or check back later.
+                  </div>
+                )}
               </>
             ) : (
               <div className="text-sm text-gray-400">
@@ -982,7 +1011,7 @@ export default function Dashboard() {
                             >
                               <td className="px-6 py-4">
                                 <div className="flex items-center gap-3">
-                                  <div className="w-10 h-10 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center shrink-0">
+                                  <div className="w-10 h-10 bg-linear-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center shrink-0">
                                     <span className="text-sm font-bold text-white">
                                       {profile.company_name
                                         ? profile.company_name
@@ -1014,7 +1043,8 @@ export default function Dashboard() {
                                   }
                                   disabled={
                                     favoriteLoadingId ===
-                                    (profile.profile_id || profile.id)
+                                      (profile.profile_id || profile.id) ||
+                                    profile.status === "processing"
                                   }
                                   className={`transition p-1 rounded-lg ${
                                     profile.is_favorite
@@ -1022,8 +1052,9 @@ export default function Dashboard() {
                                       : "text-gray-500 hover:text-yellow-400"
                                   } ${
                                     favoriteLoadingId ===
-                                    (profile.profile_id || profile.id)
-                                      ? "opacity-50"
+                                      (profile.profile_id || profile.id) ||
+                                    profile.status === "processing"
+                                      ? "opacity-50 cursor-not-allowed"
                                       : ""
                                   }`}
                                 >
@@ -1041,9 +1072,16 @@ export default function Dashboard() {
                                 <div className="flex items-center justify-center gap-2">
                                   <button
                                     onClick={() => viewDetails(profile)}
-                                    className="px-3 py-1.5 bg-[#5B9FED] hover:bg-[#4A8DD9] rounded-lg text-xs font-medium transition text-white"
+                                    disabled={profile.status === "processing"}
+                                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition text-white ${
+                                      profile.status === "processing"
+                                        ? "bg-gray-700 cursor-not-allowed opacity-70"
+                                        : "bg-[#5B9FED] hover:bg-[#4A8DD9]"
+                                    }`}
                                   >
-                                    View Details
+                                    {profile.status === "processing"
+                                      ? "Processing..."
+                                      : "View Details"}
                                   </button>
                                   <div className="relative">
                                     <button
@@ -1053,7 +1091,12 @@ export default function Dashboard() {
                                           e
                                         )
                                       }
-                                      className="text-gray-500 hover:text-white transition p-1 rounded-lg hover:bg-gray-800"
+                                      disabled={profile.status === "processing"}
+                                      className={`text-gray-500 transition p-1 rounded-lg ${
+                                        profile.status === "processing"
+                                          ? "opacity-50 cursor-not-allowed"
+                                          : "hover:text-white hover:bg-gray-800"
+                                      }`}
                                     >
                                       <MoreVertical size={18} />
                                     </button>
@@ -1096,7 +1139,8 @@ export default function Dashboard() {
                             onClick={(e) => handleToggleFavorite(profile, e)}
                             disabled={
                               favoriteLoadingId ===
-                              (profile.profile_id || profile.id)
+                                (profile.profile_id || profile.id) ||
+                              profile.status === "processing"
                             }
                             className={`transition p-1 rounded-lg ${
                               profile.is_favorite
@@ -1104,7 +1148,8 @@ export default function Dashboard() {
                                 : "text-gray-500 hover:text-yellow-400"
                             } ${
                               favoriteLoadingId ===
-                              (profile.profile_id || profile.id)
+                                (profile.profile_id || profile.id) ||
+                              profile.status === "processing"
                                 ? "opacity-50 cursor-not-allowed"
                                 : ""
                             }`}
@@ -1127,7 +1172,12 @@ export default function Dashboard() {
                                 e
                               )
                             }
-                            className="text-gray-500 hover:text-white transition p-1 rounded-lg hover:bg-gray-800"
+                            disabled={profile.status === "processing"}
+                            className={`text-gray-500 transition p-1 rounded-lg ${
+                              profile.status === "processing"
+                                ? "opacity-50 cursor-not-allowed"
+                                : "hover:text-white hover:bg-gray-800"
+                            }`}
                           >
                             <MoreVertical size={20} />
                           </button>
@@ -1148,7 +1198,7 @@ export default function Dashboard() {
                         </div>
 
                         <div className="flex justify-center mb-4">
-                          <div className="w-16 h-16 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center">
+                          <div className="w-16 h-16 bg-linear-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center">
                             <span className="text-2xl font-bold text-white">
                               {profile.company_name
                                 ? profile.company_name.charAt(0).toUpperCase()
@@ -1169,20 +1219,32 @@ export default function Dashboard() {
                             : ""}
                         </p>
 
-                        <p className="text-sm text-gray-400 mb-5 line-clamp-2 text-center">
-                          {profile.executive_summary || "No summary available."}
-                        </p>
+                        {profile.status === "processing" ? (
+                          <div className="w-full px-4 mb-5 h-12 flex flex-col justify-center gap-2 animate-pulse">
+                            <div className="h-2 bg-gray-700 rounded-full w-full"></div>
+                            <div className="h-2 bg-gray-700 rounded-full w-2/3 mx-auto"></div>
+                          </div>
+                        ) : (
+                          <p className="text-sm text-gray-400 mb-5 line-clamp-2 text-center h-12">
+                            {profile.executive_summary ||
+                              "No summary available."}
+                          </p>
+                        )}
 
                         <button
                           onClick={() => viewDetails(profile)}
                           disabled={
-                            viewLoadingId === (profile.profile_id || profile.id)
+                            viewLoadingId ===
+                              (profile.profile_id || profile.id) ||
+                            profile.status === "processing"
                           }
                           className={`w-full px-4 py-2.5 rounded-lg font-medium transition flex items-center justify-center gap-2 ${
-                            viewLoadingId === (profile.profile_id || profile.id)
-                              ? "bg-gray-600 cursor-not-allowed"
-                              : "bg-[#4A5568] hover:bg-[#5A6578]"
-                          } text-white`}
+                            viewLoadingId ===
+                              (profile.profile_id || profile.id) ||
+                            profile.status === "processing"
+                              ? "bg-gray-800/50 border border-gray-700 cursor-not-allowed text-gray-500"
+                              : "bg-[#4A5568] hover:bg-[#5A6578] text-white"
+                          }`}
                         >
                           {viewLoadingId ===
                           (profile.profile_id || profile.id) ? (
@@ -1208,6 +1270,11 @@ export default function Dashboard() {
                               </svg>
                               Loading...
                             </>
+                          ) : profile.status === "processing" ? (
+                            <span className="flex items-center gap-2 animate-pulse">
+                              <Loader2 size={14} className="animate-spin" />
+                              Generating...
+                            </span>
                           ) : (
                             "View Details →"
                           )}
