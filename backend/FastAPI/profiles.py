@@ -25,6 +25,7 @@ class ProfileResponse(BaseModel):
     user_id: str  # UUID
     company_name: str
     status: Optional[str] = "completed"
+    error_message: Optional[str] = None
     overview: Optional[dict] = None
     tech_stack: Optional[list] = None
     recent_news_signals: Optional[list] = None
@@ -82,7 +83,7 @@ async def process_profile_background(profile_id: str, company_name: str):
             UPDATE company_profiles 
             SET overview = $1, tech_stack = $2, recent_news_signals = $3, key_contacts = $4,
                 executive_summary = $5, pain_points = $6, opening_lines = $7, data_sources = $8,
-                last_analyzed_at = $9, status = 'completed'
+                last_analyzed_at = $9, status = 'completed', error_message = NULL
             WHERE profile_id = $10::uuid
             """,
             overview_json, tech_stack_json, recent_news_json, key_contacts_json,
@@ -93,8 +94,9 @@ async def process_profile_background(profile_id: str, company_name: str):
         
     except Exception as e:
         print(f"Error in background task for {company_name}: {e}")
+        # Delete the profile if generation failed
         await db.execute(
-            "UPDATE company_profiles SET status = 'failed' WHERE profile_id = $1::uuid",
+            "DELETE FROM company_profiles WHERE profile_id = $1::uuid",
             profile_id
         )
 
@@ -301,7 +303,7 @@ async def get_my_profiles(current_user: dict = Depends(get_current_user)):
     try:
         profiles = await db.fetch_all(
             """
-            SELECT profile_id, user_id, company_name, status, overview, tech_stack,
+            SELECT profile_id, user_id, company_name, status, error_message, overview, tech_stack,
                    recent_news_signals, key_contacts, executive_summary, pain_points,
                    opening_lines, data_sources, last_analyzed_at, is_favorite, created_at
             FROM company_profiles
@@ -318,6 +320,7 @@ async def get_my_profiles(current_user: dict = Depends(get_current_user)):
                 user_id=str(profile["user_id"]),  # Convert UUID to string
                 company_name=profile["company_name"],
                 status=profile["status"] if "status" in profile else "completed",
+                error_message=profile["error_message"] if "error_message" in profile else None,
                 overview=json.loads(profile["overview"]) if profile["overview"] else None,
                 tech_stack=json.loads(profile["tech_stack"]) if profile["tech_stack"] else None,
                 recent_news_signals=json.loads(profile["recent_news_signals"]) if profile["recent_news_signals"] else None,
@@ -356,7 +359,7 @@ async def get_profile_by_id(
     try:
         profile = await db.fetch_one(
             """
-            SELECT profile_id, user_id, company_name, status, overview, tech_stack,
+            SELECT profile_id, user_id, company_name, status, error_message, overview, tech_stack,
                    recent_news_signals, key_contacts, executive_summary, pain_points,
                    opening_lines, data_sources, last_analyzed_at, is_favorite, created_at
             FROM company_profiles
@@ -377,6 +380,7 @@ async def get_profile_by_id(
             user_id=str(profile["user_id"]),  # Convert UUID to string
             company_name=profile["company_name"],
             status=profile["status"] if "status" in profile else "completed",
+            error_message=profile["error_message"] if "error_message" in profile else None,
             overview=json.loads(profile["overview"]) if profile["overview"] else None,
             tech_stack=json.loads(profile["tech_stack"]) if profile["tech_stack"] else None,
             recent_news_signals=json.loads(profile["recent_news_signals"]) if profile["recent_news_signals"] else None,
@@ -472,14 +476,13 @@ async def toggle_favorite(
         
         # Toggle favorite status
         new_favorite_status = not existing["is_favorite"] if existing["is_favorite"] is not None else True
-        
         # Update database
         updated_profile = await db.fetch_one(
             """
             UPDATE company_profiles 
             SET is_favorite = $1
             WHERE profile_id = $2::uuid AND user_id = $3
-            RETURNING profile_id, user_id, company_name, status, overview, tech_stack,
+            RETURNING profile_id, user_id, company_name, status, error_message, overview, tech_stack,
                       recent_news_signals, key_contacts, executive_summary, pain_points,
                       opening_lines, data_sources, last_analyzed_at, is_favorite, created_at
             """,
@@ -493,6 +496,7 @@ async def toggle_favorite(
             user_id=str(updated_profile["user_id"]),
             company_name=updated_profile["company_name"],
             status=updated_profile["status"] if "status" in updated_profile else "completed",
+            error_message=updated_profile["error_message"] if "error_message" in updated_profile else None,
             overview=json.loads(updated_profile["overview"]) if updated_profile["overview"] else None,
             tech_stack=json.loads(updated_profile["tech_stack"]) if updated_profile["tech_stack"] else None,
             recent_news_signals=json.loads(updated_profile["recent_news_signals"]) if updated_profile["recent_news_signals"] else None,
@@ -504,6 +508,7 @@ async def toggle_favorite(
             last_analyzed_at=str(updated_profile["last_analyzed_at"]) if updated_profile["last_analyzed_at"] else None,
             is_favorite=updated_profile["is_favorite"],
             created_at=str(updated_profile["created_at"])
+        )   created_at=str(updated_profile["created_at"])
         )
     
     except HTTPException:

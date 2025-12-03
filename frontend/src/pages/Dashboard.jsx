@@ -158,12 +158,42 @@ export default function Dashboard() {
             setGenerating(false);
             setPolling(false);
             setPollingStatus("failed");
-            toast.error("Profile generation failed.");
+
+            // Check for specific error messages
+            const errorMsg = profile.error_message || "";
+            if (
+              errorMsg.includes("429") ||
+              errorMsg.includes("Resource has been exhausted") ||
+              errorMsg.includes("Quota exceeded")
+            ) {
+              toast.error("Gemini API limit reached. Please try again later.", {
+                duration: 5000,
+                icon: "⚠️",
+              });
+            } else {
+              toast.error(errorMsg || "Profile generation failed.");
+            }
           } else {
             // Still processing
             console.log("Still processing...");
           }
         } catch (err) {
+          // Handle 404 (Profile deleted due to failure)
+          if (
+            err.message.includes("404") ||
+            (err.response && err.response.status === 404)
+          ) {
+            clearInterval(pollInterval);
+            setGenerating(false);
+            setPolling(false);
+            setPollingStatus("failed");
+            toast.error("Profile generation failed.");
+            // Remove from list
+            setProfiles((prev) =>
+              prev.filter((p) => (p.profile_id || p.id) !== profileId)
+            );
+            return;
+          }
           console.error("Polling error:", err);
           // Don't stop polling on transient errors
         }
@@ -722,7 +752,9 @@ export default function Dashboard() {
         {/* Logo */}
         <div className="p-6 border-b border-gray-800">
           {/* Use public/SIFT no BG.png — public files are served from root */}
-          <img src="/SIFT%20no%20BG.png" alt="SIFT" className="w-24 h-auto" />
+          <a href="/">
+            <img src="/SIFT%20no%20BG.png" alt="SIFT" className="w-24 h-auto" />
+          </a>
         </div>
 
         {/* Navigation */}
@@ -1220,12 +1252,13 @@ export default function Dashboard() {
                         </p>
 
                         {profile.status === "processing" ? (
-                          <div className="w-full px-4 mb-5 h-12 flex flex-col justify-center gap-2 animate-pulse">
+                          <div className="w-full px-4 mb-5 h-[60px] flex flex-col justify-center gap-2 animate-pulse">
                             <div className="h-2 bg-gray-700 rounded-full w-full"></div>
                             <div className="h-2 bg-gray-700 rounded-full w-2/3 mx-auto"></div>
+                            <div className="h-2 bg-gray-700 rounded-full w-1/2 mx-auto"></div>
                           </div>
                         ) : (
-                          <p className="text-sm text-gray-400 mb-5 line-clamp-2 text-center h-12">
+                          <p className="text-sm text-gray-400 mb-5 line-clamp-3 text-center h-[60px]">
                             {profile.executive_summary ||
                               "No summary available."}
                           </p>
