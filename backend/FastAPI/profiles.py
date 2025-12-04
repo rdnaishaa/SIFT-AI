@@ -508,7 +508,6 @@ async def toggle_favorite(
             last_analyzed_at=str(updated_profile["last_analyzed_at"]) if updated_profile["last_analyzed_at"] else None,
             is_favorite=updated_profile["is_favorite"],
             created_at=str(updated_profile["created_at"])
-        )   created_at=str(updated_profile["created_at"])
         )
     
     except HTTPException:

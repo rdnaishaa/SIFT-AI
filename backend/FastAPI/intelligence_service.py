@@ -12,7 +12,7 @@ load_dotenv()
 
 # Initialize Gemini client
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-model = genai.GenerativeModel('gemini-2.5-flash')  
+model = genai.GenerativeModel('gemini-2.0-flash-lite')  
 
 async def generate_company_intelligence(
     company_name: str,

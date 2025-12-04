@@ -6,7 +6,7 @@ from fastapi import HTTPException
 from .schemas import CompanyProfile 
 
 # Inisialisasi LLM
-llm = ChatGoogle(model="gemini-flash-latest")
+llm = ChatGoogle(model="gemini-2.0-flash-lite")
 
 browser = Browser(
     executable_path='C:\\Users\\esun\\AppData\\Local\\Google\\Chrome\\Application\\chrome.exe',
