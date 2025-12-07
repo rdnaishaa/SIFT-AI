@@ -1,7 +1,14 @@
 import React, { useState, useEffect } from "react";
-import { ArrowRight, FileText, Database, TrendingUp } from "lucide-react";
+import {
+  ArrowRight,
+  FileText,
+  Database,
+  TrendingUp,
+  Menu,
+  X,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Marquee } from "../ui/marquee";
 import { cn } from "../lib/utils";
 import GlareHover from "../ui/GlareHover";
@@ -25,7 +32,7 @@ const ReviewCard = ({ img, name, username, body }) => {
   return (
     <figure
       className={cn(
-        "relative w-96 cursor-pointer overflow-hidden rounded-xl border p-6 mb-6",
+        "relative w-full max-w-[350px] md:w-96 cursor-pointer overflow-hidden rounded-xl border p-6 mb-6 mx-auto",
         "border-gray-800 bg-[#393D41] hover:bg-[#393D41]/90",
         "backdrop-blur-sm shadow-lg"
       )}
@@ -48,6 +55,7 @@ const ReviewCard = ({ img, name, username, body }) => {
 
 export default function LandingPage() {
   const [currentStep, setCurrentStep] = useState(0);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const steps = [
     {
@@ -134,9 +142,11 @@ export default function LandingPage() {
         </div>
 
         {/* Navigation */}
-        <nav className="relative z-10 flex justify-between items-center px-8 py-6">
-          <img src="/SIFT no BG.png" alt="SIFT Logo" className="h-20" />
-          <div className="flex gap-8 text-base items-center">
+        <nav className="relative z-20 flex justify-between items-center px-4 md:px-8 py-6">
+          <img src="/SIFT no BG.png" alt="SIFT Logo" className="h-12 md:h-20" />
+
+          {/* Desktop Menu */}
+          <div className="hidden md:flex gap-8 text-base items-center">
             <a
               href="#about"
               className="text-white hover:text-[#73B2FF] transition"
@@ -162,20 +172,73 @@ export default function LandingPage() {
               Login
             </button>
           </div>
+
+          {/* Mobile Menu Button */}
+          <button
+            className="md:hidden text-white p-2"
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          >
+            {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
         </nav>
 
+        {/* Mobile Menu Overlay */}
+        <AnimatePresence>
+          {isMobileMenuOpen && (
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="absolute top-20 left-0 right-0 z-20 bg-[#1a2332] border-b border-gray-800 p-4 md:hidden shadow-xl"
+            >
+              <div className="flex flex-col gap-4">
+                <a
+                  href="#about"
+                  className="text-white hover:text-[#73B2FF] transition py-2"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  About
+                </a>
+                <a
+                  href="#features"
+                  className="text-white hover:text-[#73B2FF] transition py-2"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Features
+                </a>
+                <a
+                  href="#contact"
+                  className="text-white hover:text-[#73B2FF] transition py-2"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Contact
+                </a>
+                <button
+                  onClick={() => {
+                    handleLoginClick();
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className="bg-white text-gray-900 px-6 py-3 rounded-lg hover:bg-[#73B2FF] hover:text-white transition w-full font-medium"
+                >
+                  Login
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* Hero Section */}
-        <section className="relative z-10 container mx-auto px-8  pb-32 text-center flex items-center justify-center min-h-[calc(100vh-120px)]">
+        <section className="relative z-10 container mx-auto px-4 md:px-8 pb-20 md:pb-32 text-center flex items-center justify-center min-h-[calc(100vh-120px)]">
           <motion.div
-            className="max-w-4xl"
+            className="max-w-4xl w-full"
             initial="hidden"
             animate="visible"
             variants={staggerContainer}
           >
             <div className="relative">
-              {/* Decorative Shapes Container */}
+              {/* Decorative Shapes Container - Hidden on mobile for cleaner look */}
               <motion.div
-                className="absolute inset-0 w-full"
+                className="absolute inset-0 w-full hidden md:block"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 1, delay: 0.5 }}
@@ -225,9 +288,9 @@ export default function LandingPage() {
                 </div>
               </motion.div>
 
-              <div className="max-w-4xl">
+              <div className="max-w-4xl mx-auto">
                 <motion.h1
-                  className="text-7xl font-bold mb-3 tracking-tight text-white"
+                  className="text-4xl md:text-7xl font-bold mb-4 md:mb-6 tracking-tight text-white"
                   variants={fadeInUp}
                 >
                   The Easiest Way
@@ -237,7 +300,7 @@ export default function LandingPage() {
                   into Deals.
                 </motion.h1>
                 <motion.p
-                  className="text-gray-300 text-lg mb-3 mx-auto max-w-xl"
+                  className="text-gray-300 text-base md:text-lg mb-6 md:mb-8 mx-auto max-w-xl px-4"
                   variants={fadeInUp}
                 >
                   Stop doing manual research. SIFT leverages agentic AI to
@@ -246,7 +309,7 @@ export default function LandingPage() {
                 </motion.p>
                 <motion.button
                   onClick={handleLoginClick}
-                  className="bg-white hover:bg-[#73B2FF] text-black hover:text-white px-8 py-3 rounded-lg inline-flex items-center gap-2 transition relative"
+                  className="bg-white hover:bg-[#73B2FF] text-black hover:text-white px-6 md:px-8 py-3 rounded-lg inline-flex items-center gap-2 transition relative text-sm md:text-base"
                   variants={fadeInUp}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
@@ -260,7 +323,7 @@ export default function LandingPage() {
       </div>
 
       {/* Features Section */}
-      <section className="bg-[#1B201A] container mx-auto px-8 py-20">
+      <section className="bg-[#1B201A] container mx-auto px-4 md:px-8 py-16 md:py-20">
         <motion.div
           initial="hidden"
           whileInView="visible"
@@ -268,13 +331,13 @@ export default function LandingPage() {
           variants={staggerContainer}
         >
           <motion.h2
-            className="text-4xl font-bold text-center mb-16"
+            className="text-3xl md:text-4xl font-bold text-center mb-12 md:mb-16"
             variants={fadeInUp}
           >
             Everything You Need to Close Deals Faster
           </motion.h2>
           <motion.p
-            className="text-center text-gray-300 mb-12 max-w-3xl mx-auto"
+            className="text-center text-gray-300 mb-8 md:mb-12 max-w-3xl mx-auto text-sm md:text-base"
             variants={fadeInUp}
           >
             The SIFT platform eliminates manual research and delivers the
@@ -282,19 +345,19 @@ export default function LandingPage() {
             and accelerate client acquisition
           </motion.p>
 
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
             <motion.div
-              className="bg-[#393D41] border border-gray-800 p-8 rounded-xl shadow-lg"
+              className="bg-[#393D41] border border-gray-800 p-6 md:p-8 rounded-xl shadow-lg"
               variants={fadeInUp}
               whileHover={{ y: -10 }}
             >
               <div className="bg-[#CE3381] w-16 h-16 rounded-lg flex items-center justify-center mb-6">
                 <FileText size={32} className="text-white" />
               </div>
-              <h3 className="text-xl font-semibold mb-4">
+              <h3 className="text-lg md:text-xl font-semibold mb-4">
                 Automate Insight Generation
               </h3>
-              <p className="text-gray-400 leading-relaxed">
+              <p className="text-gray-400 leading-relaxed text-sm md:text-base">
                 Instantly generate comprehensive client profiles powered by an
                 Agentic AI. Get deep insights into tech stacks, buying signals,
                 and recent activities.
@@ -302,17 +365,17 @@ export default function LandingPage() {
             </motion.div>
 
             <motion.div
-              className="bg-[#393D41] border border-gray-800 p-8 rounded-xl shadow-lg"
+              className="bg-[#393D41] border border-gray-800 p-6 md:p-8 rounded-xl shadow-lg"
               variants={fadeInUp}
               whileHover={{ y: -10 }}
             >
               <div className="bg-[#CE3381] w-16 h-16 rounded-lg flex items-center justify-center mb-6">
                 <Database size={32} className="text-white" />
               </div>
-              <h3 className="text-xl font-semibold mb-4">
+              <h3 className="text-lg md:text-xl font-semibold mb-4">
                 Unified Prospect Dashboard
               </h3>
-              <p className="text-gray-400 leading-relaxed">
+              <p className="text-gray-400 leading-relaxed text-sm md:text-base">
                 Manage all your high-potential leads in one central hub. Utilize
                 powerful Search and Filter tools to quickly organize, track, and
                 bookmark your most valuable prospects.
@@ -320,17 +383,17 @@ export default function LandingPage() {
             </motion.div>
 
             <motion.div
-              className="bg-[#393D41] border border-gray-800 p-8 rounded-xl shadow-lg"
+              className="bg-[#393D41] border border-gray-800 p-6 md:p-8 rounded-xl shadow-lg"
               variants={fadeInUp}
               whileHover={{ y: -10 }}
             >
               <div className="bg-[#CE3381] w-16 h-16 rounded-lg flex items-center justify-center mb-6">
                 <TrendingUp size={32} className="text-white" />
               </div>
-              <h3 className="text-xl font-semibold mb-4">
+              <h3 className="text-lg md:text-xl font-semibold mb-4">
                 Secure data & Access
               </h3>
-              <p className="text-gray-400 leading-relaxed">
+              <p className="text-gray-400 leading-relaxed text-sm md:text-base">
                 Ensure that all your sensitive client data and competitive
                 intelligence remain protected. SIFT provides secure User
                 Authentication and keeps your saved profiles private.
@@ -338,8 +401,8 @@ export default function LandingPage() {
             </motion.div>
           </div>
 
-          <motion.div className="text-center mt-12" variants={fadeInUp}>
-            <button className="bg-transparent border border-gray-700 hover:border-[#73B2FF] hover:text-[#73B2FF] px-8 py-3 rounded-lg transition duration-300">
+          <motion.div className="text-center mt-8 md:mt-12" variants={fadeInUp}>
+            <button className="bg-transparent border border-gray-700 hover:border-[#73B2FF] hover:text-[#73B2FF] px-6 md:px-8 py-3 rounded-lg transition duration-300 text-sm md:text-base">
               View Demo
             </button>
           </motion.div>
@@ -347,34 +410,34 @@ export default function LandingPage() {
       </section>
 
       {/* Find Client Section - Black Background */}
-      <section className="bg-[#1B201A] py-20">
+      <section className="bg-[#1B201A] py-16 md:py-20">
         <motion.div
-          className="container mx-auto px-8"
+          className="container mx-auto px-4 md:px-8"
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: "-100px" }}
           variants={staggerContainer}
         >
           <motion.h2
-            className="text-4xl font-bold text-center mb-16 text-[#73B2FF]"
+            className="text-3xl md:text-4xl font-bold text-center mb-12 md:mb-16 text-[#73B2FF]"
             variants={fadeInUp}
           >
             Find Your Next Client in Seconds.
           </motion.h2>
 
           <motion.div
-            className="flex items-center justify-center gap-12 min-h-[400px]"
+            className="flex flex-col md:flex-row items-center justify-center gap-8 md:gap-12 min-h-[400px]"
             variants={fadeInUp}
           >
-            <div className="bg-gray-800/50 backdrop-blur p-2 rounded-xl max-w-2xl transition-all duration-500 ease-in-out">
-              <div className="bg-gray-900 rounded-lg relative">
+            <div className="bg-gray-800/50 backdrop-blur p-2 rounded-xl max-w-2xl w-full transition-all duration-500 ease-in-out">
+              <div className="bg-gray-900 rounded-lg relative aspect-video md:aspect-auto">
                 <img
                   src={steps[currentStep].image}
                   alt="Dashboard Screenshot"
                   className="rounded-lg w-full h-full object-cover"
                 />
                 {steps[currentStep].showArrow && (
-                  <div className="absolute bottom-0 right-0 translate-x-10 translate-y-24 z-10">
+                  <div className="absolute bottom-0 right-0 translate-x-4 md:translate-x-10 translate-y-12 md:translate-y-24 z-10 hidden md:block">
                     <img
                       src="/src/assets/arrow.svg"
                       alt="Arrow"
@@ -385,19 +448,19 @@ export default function LandingPage() {
               </div>
             </div>
 
-            <div className="max-w-md transition-all duration-500 ease-in-out">
+            <div className="max-w-md w-full transition-all duration-500 ease-in-out">
               <div className="bg-[#73B2FF] w-12 h-12 rounded-full flex items-center justify-center mb-4 text-xl font-bold">
                 {steps[currentStep].number}
               </div>
-              <h3 className="text-2xl font-bold mb-4">
+              <h3 className="text-xl md:text-2xl font-bold mb-4">
                 {steps[currentStep].title}
               </h3>
-              <p className="text-gray-300 leading-relaxed">
+              <p className="text-gray-300 leading-relaxed text-sm md:text-base">
                 {steps[currentStep].description}
               </p>
 
               {/* Carousel Indicators */}
-              <div className="flex gap-2 mt-8">
+              <div className="flex gap-2 mt-6 md:mt-8">
                 {steps.map((_, index) => (
                   <button
                     key={index}
@@ -414,8 +477,11 @@ export default function LandingPage() {
             </div>
           </motion.div>
 
-          <motion.div className="text-center mt-32" variants={fadeInUp}>
-            <button className="border border-gray-600 hover:border-gray-400 px-6 py-2 rounded-lg transition">
+          <motion.div
+            className="text-center mt-16 md:mt-32"
+            variants={fadeInUp}
+          >
+            <button className="border border-gray-600 hover:border-gray-400 px-6 py-2 rounded-lg transition text-sm md:text-base">
               See More
             </button>
           </motion.div>
@@ -423,23 +489,23 @@ export default function LandingPage() {
       </section>
 
       {/* Testimonials Section - Black Background */}
-      <section className="bg-[#1B201A] py-20">
+      <section className="bg-[#1B201A] py-16 md:py-20">
         <motion.div
-          className="container mx-auto px-8"
+          className="container mx-auto px-4 md:px-8"
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: "-100px" }}
           variants={staggerContainer}
         >
           <motion.h2
-            className="text-4xl font-bold text-center mb-16 text-[#73B2FF]"
+            className="text-3xl md:text-4xl font-bold text-center mb-12 md:mb-16 text-[#73B2FF]"
             variants={fadeInUp}
           >
             Don't Take Our Word for It
           </motion.h2>
 
           <motion.div
-            className="relative flex h-[500px] w-full flex-row items-center justify-center overflow-hidden"
+            className="relative flex h-[400px] md:h-[500px] w-full flex-row items-center justify-center overflow-hidden"
             variants={fadeInUp}
           >
             <div className="flex gap-4">
@@ -467,38 +533,40 @@ export default function LandingPage() {
       </section>
 
       {/* CTA Section - Black Background */}
-      <section className="relative bg-[#1B201A] py-32 overflow-hidden">
+      <section className="relative bg-[#1B201A] py-20 md:py-32 overflow-hidden">
         {/* Gradient Overlay from Right */}
         <div className="absolute inset-0 bg-linear-to-l from-[#73B2FF]/20 via-transparent to-transparent"></div>
         <motion.div
-          className="container mx-auto px-8 text-center relative z-10"
+          className="container mx-auto px-4 md:px-8 text-center relative z-10"
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: "-100px" }}
           variants={staggerContainer}
         >
           <motion.h2
-            className="text-4xl md:text-5xl font-bold mb-4"
+            className="text-3xl md:text-5xl font-bold mb-2 md:mb-4"
             variants={fadeInUp}
           >
             Transform
           </motion.h2>
           <motion.h2
-            className="text-4xl md:text-5xl font-bold mb-8"
+            className="text-3xl md:text-5xl font-bold mb-6 md:mb-8"
             variants={fadeInUp}
           >
             Your Prospecting.
           </motion.h2>
 
           <motion.div
-            className="flex flex-col  justify-baseline w-full mb-12"
+            className="flex flex-col justify-baseline w-full mb-8 md:mb-12"
             variants={fadeInUp}
           >
-            <div className="text-5xl md:text-6xl font-bold mb-6">Try</div>
+            <div className="text-4xl md:text-6xl font-bold mb-4 md:mb-6">
+              Try
+            </div>
             <img
               src="/SIFT no BG.png"
               alt="SIFT Logo"
-              className="h-24 md:h-28 mx-auto"
+              className="h-20 md:h-28 mx-auto"
             />
             <p className="text-xs text-gray-400 mt-1 font-medium tracking-wider">
               User Profiling Agents.AI
@@ -507,7 +575,7 @@ export default function LandingPage() {
 
           <motion.button
             onClick={handleLoginClick}
-            className="bg-[#73B2FF] hover:bg-[#5A9DE6] px-10 py-4 rounded-lg flex items-center gap-2 mx-auto text-lg transition text-white"
+            className="bg-[#73B2FF] hover:bg-[#5A9DE6] px-8 md:px-10 py-3 md:py-4 rounded-lg flex items-center gap-2 mx-auto text-base md:text-lg transition text-white"
             variants={fadeInUp}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
@@ -518,11 +586,11 @@ export default function LandingPage() {
       </section>
 
       {/* Footer - Black Background */}
-      <footer className="bg-[#1B201A] border-t border-gray-800 py-12">
-        <div className="container mx-auto px-8">
-          <div className="grid md:grid-cols-4 gap-8 mb-8">
+      <footer className="bg-[#1B201A] border-t border-gray-800 py-8 md:py-12">
+        <div className="container mx-auto px-4 md:px-8">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
             <div>
-              <img src="public\SIFT no BG.png" className="h-16" />
+              <img src="public\SIFT no BG.png" className="h-12 md:h-16 mb-4" />
               <p className="text-sm text-gray-400">
                 © 2025 Company, Inc.
                 <br />

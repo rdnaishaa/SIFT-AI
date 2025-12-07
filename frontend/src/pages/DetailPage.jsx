@@ -598,8 +598,8 @@ export default function DetailPage() {
       )}
 
       {/* Header */}
-      <header className="bg-[#1A1D21] border-b border-gray-800 px-8 py-4">
-        <div className="flex items-center justify-between">
+      <header className="bg-[#1A1D21] border-b border-gray-800 px-4 md:px-8 py-4">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 md:gap-0">
           <button
             onClick={goBack}
             className="flex items-center gap-2 text-gray-400 hover:text-white transition"
@@ -608,7 +608,7 @@ export default function DetailPage() {
             <span className="text-sm font-medium">Back to Dashboard</span>
           </button>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 w-full md:w-auto overflow-x-auto md:overflow-visible pb-2 md:pb-0 no-scrollbar">
             {/* Favorite Button */}
             <button
               onClick={handleToggleFavorite}
@@ -676,18 +676,18 @@ export default function DetailPage() {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-8 py-8">
+      <main className="max-w-7xl mx-auto px-4 md:px-8 py-6 md:py-8">
         {/* Company Header */}
-        <div className="flex items-start gap-6 mb-8">
-          <div className="w-20 h-20 bg-white rounded-2xl flex items-center justify-center shrink-0">
+        <div className="flex flex-col md:flex-row items-start gap-4 md:gap-6 mb-6 md:mb-8">
+          <div className="w-16 h-16 md:w-20 md:h-20 bg-white rounded-2xl flex items-center justify-center shrink-0">
             {profile?.logo_url ? (
               <img
                 src={profile.logo_url}
                 alt={`${profile.company_name} logo`}
-                className="w-16 h-16 object-contain"
+                className="w-12 h-12 md:w-16 md:h-16 object-contain"
               />
             ) : (
-              <div className="text-4xl font-bold text-green-500">
+              <div className="text-3xl md:text-4xl font-bold text-green-500">
                 {profile?.company_name
                   ? profile.company_name.charAt(0).toUpperCase()
                   : "..."}
@@ -695,7 +695,7 @@ export default function DetailPage() {
             )}
           </div>
           <div className="flex-1">
-            <h1 className="text-3xl font-bold mb-2">
+            <h1 className="text-2xl md:text-3xl font-bold mb-2">
               {profile ? profile.company_name : "Loading..."}
             </h1>
             <a
@@ -720,7 +720,7 @@ export default function DetailPage() {
           {/* Left Column - Main Content */}
           <div className="lg:col-span-2 space-y-6">
             {/* AI Executive Summary */}
-            <div className="bg-[#1A1D21] border border-gray-800 rounded-2xl p-6">
+            <div className="bg-[#1A1D21] border border-gray-800 rounded-2xl p-4 md:p-6">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-semibold flex items-center gap-2">
                   AI Executive Summary
@@ -745,7 +745,7 @@ export default function DetailPage() {
             </div>
 
             {/* Potential Needs & Pain Points */}
-            <div className="bg-[#1A1D21] border border-gray-800 rounded-2xl p-6">
+            <div className="bg-[#1A1D21] border border-gray-800 rounded-2xl p-4 md:p-6">
               <div className="flex items-center gap-2 mb-4">
                 <TrendingUp size={20} className="text-[#5B9FED]" />
                 <h2 className="text-lg font-semibold">
@@ -782,7 +782,7 @@ export default function DetailPage() {
             </div>
 
             {/* Tech Stack */}
-            <div className="bg-[#1A1D21] border border-gray-800 rounded-2xl p-6">
+            <div className="bg-[#1A1D21] border border-gray-800 rounded-2xl p-4 md:p-6">
               <div className="flex items-center gap-2 mb-4">
                 <Wrench size={20} className="text-[#5B9FED]" />
                 <h2 className="text-lg font-semibold">Tech Stack</h2>
@@ -809,7 +809,7 @@ export default function DetailPage() {
             </div>
 
             {/* AI Generated Opening Lines */}
-            <div className="bg-[#1A1D21] border border-gray-800 rounded-2xl p-6">
+            <div className="bg-[#1A1D21] border border-gray-800 rounded-2xl p-4 md:p-6">
               <div className="flex items-center gap-2 mb-4">
                 <Lightbulb size={20} className="text-[#5B9FED]" />
                 <h2 className="text-lg font-semibold">
@@ -867,7 +867,7 @@ export default function DetailPage() {
             {profile?.data_sources &&
               Array.isArray(profile.data_sources) &&
               profile.data_sources.length > 0 && (
-                <div className="bg-[#1A1D21] border border-gray-800 rounded-2xl p-6">
+                <div className="bg-[#1A1D21] border border-gray-800 rounded-2xl p-4 md:p-6">
                   <div className="flex items-center gap-2 mb-4">
                     <Database size={20} className="text-[#5B9FED]" />
                     <h2 className="text-lg font-semibold">Data Sources</h2>
@@ -903,7 +903,7 @@ export default function DetailPage() {
           {/* Right Column - Sidebar */}
           <div className="space-y-6">
             {/* Quick Facts */}
-            <div className="bg-[#2A3441] border border-gray-700 rounded-2xl p-6">
+            <div className="bg-[#2A3441] border border-gray-700 rounded-2xl p-4 md:p-6">
               <div className="flex items-center gap-2 mb-5">
                 <h3 className="text-base font-semibold">Quick Facts</h3>
                 <Info size={14} className="text-gray-500" />
@@ -937,7 +937,7 @@ export default function DetailPage() {
             </div>
 
             {/* Key Contacts */}
-            <div className="bg-[#1A1D21] border border-gray-800 rounded-2xl p-6">
+            <div className="bg-[#1A1D21] border border-gray-800 rounded-2xl p-4 md:p-6">
               <div className="flex items-center gap-2 mb-5">
                 <UserCircle2 size={20} className="text-[#5B9FED]" />
                 <h3 className="text-base font-semibold">Key Contacts</h3>
@@ -993,7 +993,7 @@ export default function DetailPage() {
             </div>
 
             {/* Recent Signals */}
-            <div className="bg-[#3D2644] border border-purple-900/30 rounded-2xl p-6">
+            <div className="bg-[#3D2644] border border-purple-900/30 rounded-2xl p-4 md:p-6">
               <div className="flex items-center gap-2 mb-5">
                 <TrendingUp size={20} className="text-purple-400" />
                 <h3 className="text-base font-semibold">Recent Signals</h3>
