@@ -228,6 +228,42 @@ export const profileAPI = {
       company_name: companyName,
     });
   },
+
+  /**
+   * Chat with AI about a specific profile (Streaming)
+   * @param {string} question
+   * @param {object} profileContext
+   * @param {function} onChunk - Callback for each text chunk
+   * @returns {Promise<void>}
+   */
+  async chatWithProfileStream(question, profileContext, onChunk) {
+    const token = localStorage.getItem("access_token");
+    const response = await fetch(`${API_BASE_URL}/api/chat-profile`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        question,
+        profile_context: profileContext,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to connect to chat service");
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      const chunk = decoder.decode(value, { stream: true });
+      onChunk(chunk);
+    }
+  },
 };
 
 // Export axios instance for custom requests

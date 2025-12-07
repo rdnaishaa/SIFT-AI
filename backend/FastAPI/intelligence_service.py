@@ -3,6 +3,7 @@ Service untuk generate AI intelligence dari company data
 """
 import os
 import json
+import httpx
 from typing import List, Dict
 import google.generativeai as genai
 from dotenv import load_dotenv
@@ -159,3 +160,51 @@ async def enrich_profile_with_intelligence(profile_data) -> dict:
     )
     
     return intelligence
+
+async def chat_with_profile_context_stream(question: str, profile_context: dict):
+    """
+    Chat dengan AI menggunakan konteks profil perusahaan via Ollama (Streaming)
+    """
+    ollama_host = os.getenv("OLLAMA_HOST", "http://127.0.0.1:11434")
+    model_name = "llama3.1:8b-instruct-q4_K_S"
+    
+    system_prompt = f"""
+ROLE:
+You are an expert Sales Intelligence Analyst assisting a user in understanding a specific company profile.
+
+CONTEXT (The Company Profile Data):
+{json.dumps(profile_context, indent=2)}
+
+INSTRUCTIONS:
+1. Answer the user's question based ONLY on the provided CONTEXT above.
+2. If the answer cannot be found in the context, state clearly that the information is not available in the generated profile. Do not make up facts about the company.
+3. You may use general knowledge to explain technical terms (e.g., what "Kubernetes" is) but not for specific company facts.
+4. Keep your answers concise, professional, and helpful for a sales approach.
+
+USER QUESTION:
+{question}
+"""
+
+    payload = {
+        "model": model_name,
+        "prompt": system_prompt,
+        "stream": True
+    }
+
+    try:
+        async with httpx.AsyncClient() as client:
+            async with client.stream("POST", f"{ollama_host}/api/generate", json=payload, timeout=60.0) as response:
+                response.raise_for_status()
+                async for line in response.aiter_lines():
+                    if line:
+                        try:
+                            json_response = json.loads(line)
+                            if "response" in json_response:
+                                yield json_response["response"]
+                        except json.JSONDecodeError:
+                            continue
+            
+    except Exception as e:
+        print(f"Error calling Ollama: {e}")
+        yield f"Error: Gagal menghubungi layanan AI. ({str(e)})"
+

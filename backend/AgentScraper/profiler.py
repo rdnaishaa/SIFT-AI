@@ -1,14 +1,12 @@
 import asyncio
 import sys
 from io import StringIO
-from browser_use import Agent, ChatGoogle, Browser, ChatOllama
+from browser_use import Agent, ChatGoogle, Browser
 from fastapi import HTTPException
 from .schemas import CompanyProfile 
 
 # Inisialisasi LLM
-# llm = ChatGoogle(model="gemini-flash-latest")
-llm = ChatGoogle(model="gemini-2.0-flash-lite")
-# llm = ChatOllama(model="llama3.1:8b-instruct-q4_K_S")
+llm = ChatGoogle(model="gemini-flash-latest")
 
 browser = Browser(
     executable_path='C:\\Users\\esun\\AppData\\Local\\Google\\Chrome\\Application\\chrome.exe',
@@ -93,7 +91,7 @@ async def run_sift_agent_with_streaming(company_name: str):
         browser=browser,
         output_model_schema=CompanyProfile,
         max_steps=50,
-        use_vision=False,
+        use_vision="false"
     )
     
     # Capture stdout untuk mendapatkan agent logs
@@ -221,7 +219,7 @@ async def run_sift_agent(company_name: str) -> CompanyProfile:
         browser=browser,
         output_model_schema=CompanyProfile,
         max_steps=50,
-        use_vision=False,
+        use_vision="false"
     )
     
 

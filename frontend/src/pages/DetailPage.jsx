@@ -12,6 +12,7 @@ import {
   Trash2,
   MoreVertical,
   Star,
+  MessageSquare,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -19,6 +20,7 @@ import toast from "react-hot-toast";
 import { profileAPI } from "../services/api";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import ChatModal from "../components/ChatModal";
 
 export default function DetailPage() {
   const [profile, setProfile] = useState(null);
@@ -27,6 +29,7 @@ export default function DetailPage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [openDropdown, setOpenDropdown] = useState(false);
   const [favoriteLoading, setFavoriteLoading] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(false);
   const navigate = useNavigate();
   const { id } = useParams();
 
@@ -628,6 +631,14 @@ export default function DetailPage() {
             </button>
 
             <button
+              onClick={() => setIsChatOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm font-medium transition"
+            >
+              <MessageSquare size={18} />
+              Chat with AI
+            </button>
+
+            <button
               onClick={downloadPDF}
               className="flex items-center gap-2 px-4 py-2 bg-[#5B9FED] hover:bg-[#4A8DD9] rounded-lg text-sm font-medium transition"
             >
@@ -1036,6 +1047,12 @@ export default function DetailPage() {
           </div>
         </div>
       </main>
+
+      <ChatModal
+        isOpen={isChatOpen}
+        onClose={() => setIsChatOpen(false)}
+        profileData={profile}
+      />
     </div>
   );
 }

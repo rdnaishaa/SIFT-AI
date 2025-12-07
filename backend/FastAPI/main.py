@@ -6,6 +6,7 @@ if sys.platform == 'win32':
     asyncio.set_event_loop_policy(WindowsProactorEventLoopPolicy())
 
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 from dotenv import load_dotenv
 
@@ -16,6 +17,7 @@ from AgentScraper.profiler import run_sift_agent
 from .database import db
 from .users import router as auth_router
 from .profiles import router as profiles_router
+from .intelligence_service import chat_with_profile_context_stream
 
 load_dotenv()
 
@@ -92,6 +94,21 @@ async def generate_profile_endpoint(request: ProfileRequest):
     except Exception as e:
         print(f"Unexpected error in endpoint: {e}")
         raise HTTPException(status_code=500, detail=f"An unexpected internal server error occurred: {e}")
+
+class ChatRequest(BaseModel):
+    question: str
+    profile_context: dict
+
+@app.post("/api/chat-profile")
+async def chat_profile_endpoint(request: ChatRequest):
+    """
+    Endpoint untuk chat dengan AI mengenai profil perusahaan tertentu (Streaming).
+    """
+    return StreamingResponse(
+        chat_with_profile_context_stream(request.question, request.profile_context),
+        media_type="text/plain"
+    )
+
 
 if __name__ == "__main__":
     import uvicorn
