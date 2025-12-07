@@ -121,8 +121,9 @@ async def create_profile_stream(
     try:
         current_user = await verify_token(token)
     except Exception as e:
+        err_msg = str(e)
         async def error_generator():
-            yield f"data: ERROR|Unauthorized: {str(e)}\n\n"
+            yield f"data: ERROR|Unauthorized: {err_msg}\n\n"
         return StreamingResponse(
             error_generator(),
             media_type="text/event-stream"

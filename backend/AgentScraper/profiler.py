@@ -1,12 +1,14 @@
 import asyncio
 import sys
 from io import StringIO
-from browser_use import Agent, ChatGoogle, Browser
+from browser_use import Agent, ChatGoogle, Browser, ChatOllama
 from fastapi import HTTPException
 from .schemas import CompanyProfile 
 
 # Inisialisasi LLM
+# llm = ChatGoogle(model="gemini-flash-latest")
 llm = ChatGoogle(model="gemini-2.0-flash-lite")
+# llm = ChatOllama(model="llama3.1:8b-instruct-q4_K_S")
 
 browser = Browser(
     executable_path='C:\\Users\\esun\\AppData\\Local\\Google\\Chrome\\Application\\chrome.exe',
@@ -90,7 +92,8 @@ async def run_sift_agent_with_streaming(company_name: str):
         llm=llm,
         browser=browser,
         output_model_schema=CompanyProfile,
-        max_steps=50
+        max_steps=50,
+        use_vision=False,
     )
     
     # Capture stdout untuk mendapatkan agent logs
@@ -147,6 +150,8 @@ async def run_sift_agent(company_name: str) -> CompanyProfile:
         You are a B2B sales intelligence agent. Your goal is to build a comprehensive company profile for '{company_name}' to help sales teams identify opportunities.
 
         STEP 1 - COMPANY OVERVIEW:
+        - Go to https://www.google.com
+        - Search for "{company_name} official website" or "{company_name} LinkedIn"
         - Go to the company's official website or LinkedIn company page
         - Extract:
         * Website URL (official company website, e.g., "www.gojek.com" or "https://gojek.com")
@@ -209,12 +214,14 @@ async def run_sift_agent(company_name: str) -> CompanyProfile:
         Return the structured data as CompanyProfile schema.
         """
     
+
     agent = Agent(
         task=task_prompt,
         llm=llm,
         browser=browser,
         output_model_schema=CompanyProfile,
-        max_steps=50
+        max_steps=50,
+        use_vision=False,
     )
     
 

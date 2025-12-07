@@ -85,6 +85,8 @@ async def register(user_data: UserRegister):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Email or username already exists"
         )
+    except HTTPException:
+        raise
     except Exception as e:
         print(f"Error during registration: {e}")
         raise HTTPException(
