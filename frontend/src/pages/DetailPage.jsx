@@ -13,6 +13,9 @@ import {
   MoreVertical,
   Star,
   MessageSquare,
+  Sparkles,
+  AlertCircle,
+  CheckCircle2,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -507,12 +510,12 @@ export default function DetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0F1113] text-white">
+      <div className="min-h-screen bg-gradient-to-br from-[#0F1113] via-[#1a1d22] to-[#0F1113] text-white">
         {/* Header Skeleton */}
-        <header className="bg-[#1A1D21] border-b border-gray-800 px-8 py-4">
+        <header className="sticky top-0 z-40 bg-gradient-to-b from-[#1A1D21]/80 via-[#1a1d22]/50 to-transparent backdrop-blur-xl border-b border-gray-800/30 px-8 py-4">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-gray-700 rounded animate-pulse"></div>
-            <div className="h-4 w-40 bg-gray-700 rounded animate-pulse"></div>
+            <div className="w-8 h-8 bg-gray-700/50 rounded animate-pulse"></div>
+            <div className="h-4 w-40 bg-gray-700/50 rounded animate-pulse"></div>
           </div>
         </header>
 
@@ -520,16 +523,16 @@ export default function DetailPage() {
         <main className="max-w-7xl mx-auto px-8 py-8">
           <div className="flex gap-6">
             <div className="flex-1 space-y-6">
-              <div className="bg-[#1A1D21] border border-gray-800 rounded-2xl p-6 animate-pulse">
-                <div className="h-32 bg-gray-700 rounded"></div>
+              <div className="bg-[#1A1D21]/40 backdrop-blur-xl border border-gray-800/30 rounded-2xl p-6 animate-pulse">
+                <div className="h-32 bg-gray-700/30 rounded-xl"></div>
               </div>
-              <div className="bg-[#1A1D21] border border-gray-800 rounded-2xl p-6 animate-pulse">
-                <div className="h-48 bg-gray-700 rounded"></div>
+              <div className="bg-[#1A1D21]/40 backdrop-blur-xl border border-gray-800/30 rounded-2xl p-6 animate-pulse">
+                <div className="h-48 bg-gray-700/30 rounded-xl"></div>
               </div>
             </div>
             <div className="w-80 space-y-6">
-              <div className="bg-[#1A1D21] border border-gray-800 rounded-2xl p-6 animate-pulse">
-                <div className="h-40 bg-gray-700 rounded"></div>
+              <div className="bg-[#1A1D21]/40 backdrop-blur-xl border border-gray-800/30 rounded-2xl p-6 animate-pulse">
+                <div className="h-40 bg-gray-700/30 rounded-xl"></div>
               </div>
             </div>
           </div>
@@ -539,11 +542,11 @@ export default function DetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0F1113] text-white">
+    <div className="min-h-screen bg-gradient-to-br from-[#0F1113] via-[#1a1d22] to-[#0F1113] text-white">
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-[#1A1D21] border border-gray-700 rounded-2xl p-6 max-w-md w-full mx-4">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-gradient-to-br from-[#1A1D21]/80 to-[#0F1113]/80 backdrop-blur-xl border border-gray-700/50 rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl">
             <h3 className="text-xl font-semibold mb-4">Delete Profile</h3>
             <p className="text-gray-400 mb-6">
               Are you sure you want to delete the profile for{" "}
@@ -556,14 +559,14 @@ export default function DetailPage() {
               <button
                 onClick={() => setShowDeleteConfirm(false)}
                 disabled={deleting}
-                className="flex-1 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg font-medium transition disabled:opacity-50"
+                className="flex-1 px-4 py-2 bg-gray-700/40 hover:bg-gray-600/50 rounded-lg font-medium transition disabled:opacity-50 border border-gray-600/30"
               >
                 Cancel
               </button>
               <button
                 onClick={handleDeleteProfile}
                 disabled={deleting}
-                className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg font-medium transition disabled:opacity-50 flex items-center justify-center gap-2"
+                className="flex-1 px-4 py-2 bg-red-600/80 hover:bg-red-600 rounded-lg font-medium transition disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {deleting ? (
                   <>
@@ -598,52 +601,53 @@ export default function DetailPage() {
       )}
 
       {/* Header */}
-      <header className="bg-[#1A1D21] border-b border-gray-800 px-4 md:px-8 py-4">
+      <header className="sticky top-0 z-40 bg-gradient-to-b from-[#1A1D21]/80 via-[#1a1d22]/50 to-transparent backdrop-blur-xl border-b border-gray-800/30 px-4 md:px-8 py-4">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 md:gap-0">
           <button
             onClick={goBack}
-            className="flex items-center gap-2 text-gray-400 hover:text-white transition"
+            className="flex items-center gap-2 text-gray-400 hover:text-[#5B9FED] transition group"
           >
-            <ArrowLeft size={20} />
+            <ArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
             <span className="text-sm font-medium">Back to Dashboard</span>
           </button>
 
-          <div className="flex items-center gap-3 w-full md:w-auto overflow-x-auto md:overflow-visible pb-2 md:pb-0 no-scrollbar">
+          <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto md:overflow-visible pb-2 md:pb-0 no-scrollbar">
             {/* Favorite Button */}
             <button
               onClick={handleToggleFavorite}
               disabled={favoriteLoading}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition backdrop-blur-md border ${
                 profile?.is_favorite
-                  ? "bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30 border border-yellow-500/30"
-                  : "bg-gray-700 text-gray-300 hover:bg-gray-600 border border-gray-600"
+                  ? "bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30 border-yellow-500/30 hover:border-yellow-500/50"
+                  : "bg-gray-700/40 text-gray-300 hover:bg-gray-600/50 border-gray-600/30 hover:border-gray-500/50"
               } ${favoriteLoading ? "opacity-50 cursor-not-allowed" : ""}`}
             >
               <Star
                 size={18}
                 fill={profile?.is_favorite ? "currentColor" : "none"}
+                className="transition-transform group-hover:scale-110"
               />
               {favoriteLoading
-                ? "Loading..."
+                ? "..."
                 : profile?.is_favorite
                 ? "Favorited"
-                : "Add to Favorites"}
+                : "Favorite"}
             </button>
 
             <button
               onClick={() => setIsChatOpen(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm font-medium transition"
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600/70 to-blue-700/70 hover:from-blue-600 hover:to-blue-700 rounded-xl text-sm font-medium transition backdrop-blur-md border border-blue-500/30 hover:border-blue-500/50"
             >
               <MessageSquare size={18} />
-              Chat with AI
+              Chat
             </button>
 
             <button
               onClick={downloadPDF}
-              className="flex items-center gap-2 px-4 py-2 bg-[#5B9FED] hover:bg-[#4A8DD9] rounded-lg text-sm font-medium transition"
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#5B9FED]/70 to-[#4A8FDD]/70 hover:from-[#5B9FED] hover:to-[#4A8FDD] rounded-xl text-sm font-medium transition backdrop-blur-md border border-[#5B9FED]/30 hover:border-[#5B9FED]/50"
             >
               <Download size={18} />
-              Download PDF
+              PDF
             </button>
 
             {/* Dropdown Menu */}
@@ -653,20 +657,20 @@ export default function DetailPage() {
                   e.stopPropagation();
                   toggleDropdown();
                 }}
-                className="text-gray-400 hover:text-white transition p-2 rounded-lg hover:bg-gray-800"
+                className="text-gray-400 hover:text-white transition p-2 rounded-lg hover:bg-gray-700/40 backdrop-blur-md border border-transparent hover:border-gray-600/50"
               >
                 <MoreVertical size={20} />
               </button>
 
               {/* Dropdown Content */}
               {openDropdown && (
-                <div className="absolute right-0 mt-2 w-40 bg-[#2A2D33] border border-gray-700 rounded-lg shadow-lg z-10">
+                <div className="absolute right-0 mt-2 w-48 bg-[#1A1D21]/95 backdrop-blur-xl border border-gray-700/50 rounded-xl shadow-2xl z-10 overflow-hidden">
                   <button
                     onClick={handleDeleteClick}
-                    className="w-full px-4 py-2 text-left text-red-400 hover:bg-gray-800 rounded-lg flex items-center gap-2 transition"
+                    className="w-full px-4 py-3 text-left text-red-400 hover:bg-red-500/10 flex items-center gap-2 transition border-b border-gray-800/50 last:border-0"
                   >
                     <Trash2 size={16} />
-                    Delete
+                    Delete Profile
                   </button>
                 </div>
               )}
@@ -677,382 +681,368 @@ export default function DetailPage() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 md:px-8 py-6 md:py-8">
-        {/* Company Header */}
-        <div className="flex flex-col md:flex-row items-start gap-4 md:gap-6 mb-6 md:mb-8">
-          <div className="w-16 h-16 md:w-20 md:h-20 bg-white rounded-2xl flex items-center justify-center shrink-0">
-            {profile?.logo_url ? (
-              <img
-                src={profile.logo_url}
-                alt={`${profile.company_name} logo`}
-                className="w-12 h-12 md:w-16 md:h-16 object-contain"
-              />
+        {/* Company Header with Gradient Background */}
+        <div className="relative mb-8">
+          <div className="absolute inset-0 bg-gradient-to-r from-[#5B9FED]/10 to-purple-500/10 blur-3xl rounded-3xl"></div>
+          <div className="relative flex flex-col md:flex-row items-start gap-4 md:gap-6 bg-gradient-to-br from-[#1A1D21]/60 to-[#0F1113]/60 backdrop-blur-xl border border-gray-800/30 hover:border-gray-700/50 rounded-3xl p-6 md:p-8 transition-all duration-300">
+            <div className="w-20 h-20 md:w-24 md:h-24 bg-gradient-to-br from-[#5B9FED] to-purple-600 rounded-2xl flex items-center justify-center shrink-0 shadow-2xl shadow-[#5B9FED]/20 hover:shadow-[#5B9FED]/40 transition-all">
+              {profile?.logo_url ? (
+                <img
+                  src={profile.logo_url}
+                  alt={`${profile.company_name} logo`}
+                  className="w-16 h-16 md:w-20 md:h-20 object-contain"
+                />
+              ) : (
+                <div className="text-4xl md:text-5xl font-bold text-white">
+                  {profile?.company_name
+                    ? profile.company_name.charAt(0).toUpperCase()
+                    : "..."}
+                                </div>
+          )}
+        </div>
+        <div className="flex-1">
+          <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-white via-gray-100 to-gray-400 bg-clip-text text-transparent mb-2">
+            {profile ? profile.company_name : "Loading..."}
+          </h1>
+          <a
+            href={
+              profile?.overview?.website
+                ? profile.overview.website.startsWith("http")
+                  ? profile.overview.website
+                  : `https://${profile.overview.website}`
+                : "#"
+            }
+            className="text-sm text-gray-400 hover:text-[#5B9FED] transition inline-flex items-center gap-2 group"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {profile?.website || profile?.overview?.website || "Loading..."}
+            <ExternalLink size={14} className="group-hover:translate-x-1 transition-transform" />
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* Left Column */}
+      <div className="lg:col-span-2 space-y-6">
+        {/* AI Executive Summary */}
+        <div className="group bg-gradient-to-br from-[#1A1D21]/60 to-[#0F1113]/60 backdrop-blur-xl border border-gray-800/30 hover:border-[#5B9FED]/30 rounded-2xl p-6 md:p-8 transition-all duration-300 hover:shadow-2xl hover:shadow-[#5B9FED]/10">
+          <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-[#5B9FED]/20 rounded-lg">
+                <Sparkles size={20} className="text-[#5B9FED]" />
+              </div>
+              <h2 className="text-lg font-semibold">AI Executive Summary</h2>
+            </div>
+            {profile?.last_analyzed_at && (
+              <span className="text-xs text-gray-500 bg-gray-800/50 px-3 py-1 rounded-full">
+                {new Date(profile.last_analyzed_at).toLocaleDateString()}
+              </span>
+            )}
+          </div>
+          <div className="text-sm text-gray-300 leading-relaxed">
+            {profile?.executive_summary ? (
+              <p className="group-hover:text-gray-200 transition">{profile.executive_summary}</p>
             ) : (
-              <div className="text-3xl md:text-4xl font-bold text-green-500">
-                {profile?.company_name
-                  ? profile.company_name.charAt(0).toUpperCase()
-                  : "..."}
+              <p className="text-gray-500 italic">
+                AI-generated executive summary will appear here...
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Pain Points */}
+        <div className="group bg-gradient-to-br from-[#1A1D21]/60 to-[#0F1113]/60 backdrop-blur-xl border border-gray-800/30 hover:border-[#FF6B6B]/30 rounded-2xl p-6 md:p-8 transition-all duration-300 hover:shadow-2xl hover:shadow-[#FF6B6B]/10">
+          <div className="flex items-center gap-3 mb-5">
+            <div className="p-2 bg-[#FF6B6B]/20 rounded-lg">
+              <AlertCircle size={20} className="text-[#FF6B6B]" />
+            </div>
+            <h2 className="text-lg font-semibold">Potential Needs & Pain Points</h2>
+          </div>
+          <div className="space-y-3">
+            {profile?.pain_points && Array.isArray(profile.pain_points) && profile.pain_points.length > 0 ? (
+              <ul className="space-y-3">
+                {profile.pain_points.map((point, idx) => (
+                  <li key={idx} className="flex gap-3 group/item p-3 rounded-lg hover:bg-gray-800/30 transition">
+                    <span className="text-[#FF6B6B] mt-1 font-bold group-hover/item:scale-125 transition-transform">→</span>
+                    <div>
+                      <div className="font-medium text-white group-hover/item:text-[#FF6B6B] transition">
+                        {point.title || point}
+                      </div>
+                      {point.description && (
+                        <div className="text-sm text-gray-400 mt-1">
+                          {point.description}
+                        </div>
+                      )}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <div className="text-gray-500 italic text-sm">
+                AI-generated needs and pain points will appear here...
               </div>
             )}
           </div>
-          <div className="flex-1">
-            <h1 className="text-2xl md:text-3xl font-bold mb-2">
-              {profile ? profile.company_name : "Loading..."}
-            </h1>
-            <a
-              href={
-                profile?.overview?.website
-                  ? profile.overview.website.startsWith("http")
-                    ? profile.overview.website
-                    : `https://${profile.overview.website}`
-                  : "#"
-              }
-              className="text-sm text-gray-400 hover:text-[#5B9FED] transition inline-flex items-center gap-1"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              {profile?.website || profile?.overview?.website || "Loading..."}
-              <ExternalLink size={12} />
-            </a>
+        </div>
+
+        {/* Tech Stack */}
+        <div className="group bg-gradient-to-br from-[#1A1D21]/60 to-[#0F1113]/60 backdrop-blur-xl border border-gray-800/30 hover:border-[#4ECDC4]/30 rounded-2xl p-6 md:p-8 transition-all duration-300 hover:shadow-2xl hover:shadow-[#4ECDC4]/10">
+          <div className="flex items-center gap-3 mb-5">
+            <div className="p-2 bg-[#4ECDC4]/20 rounded-lg">
+              <Wrench size={20} className="text-[#4ECDC4]" />
+            </div>
+            <h2 className="text-lg font-semibold">Tech Stack</h2>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {profile?.tech_stack && Array.isArray(profile.tech_stack) && profile.tech_stack.length > 0 ? (
+              profile.tech_stack.map((tech, idx) => (
+                <span
+                  key={idx}
+                  className="px-4 py-2 bg-gradient-to-r from-[#4ECDC4]/20 to-[#4ECDC4]/10 border border-[#4ECDC4]/30 rounded-lg text-sm text-[#4ECDC4] hover:border-[#4ECDC4]/60 hover:bg-[#4ECDC4]/30 transition-all duration-300 cursor-default"
+                >
+                  {tech}
+                </span>
+              ))
+            ) : (
+              <div className="text-gray-500 italic text-sm">
+                Technology stack will appear here...
+              </div>
+            )}
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column - Main Content */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* AI Executive Summary */}
-            <div className="bg-[#1A1D21] border border-gray-800 rounded-2xl p-4 md:p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold flex items-center gap-2">
-                  AI Executive Summary
-                  <Edit2 size={16} className="text-gray-500" />
-                </h2>
-                {profile?.last_analyzed_at && (
-                  <span className="text-xs text-gray-500">
-                    Analyzed:{" "}
-                    {new Date(profile.last_analyzed_at).toLocaleDateString()}
+        {/* AI Opening Lines */}
+        <div className="group bg-gradient-to-br from-[#1A1D21]/60 to-[#0F1113]/60 backdrop-blur-xl border border-purple-800/30 hover:border-purple-500/30 rounded-2xl p-6 md:p-8 transition-all duration-300 hover:shadow-2xl hover:shadow-purple-500/10">
+          <div className="flex items-center gap-3 mb-5">
+            <div className="p-2 bg-purple-500/20 rounded-lg">
+              <Lightbulb size={20} className="text-purple-400" />
+            </div>
+            <h2 className="text-lg font-semibold">AI Generated Opening Lines</h2>
+            <span className="text-xs bg-purple-500/20 text-purple-300 px-3 py-1 rounded-full font-medium">NEW</span>
+          </div>
+          <div className="space-y-3">
+            {profile?.opening_lines && typeof profile.opening_lines === "object" && Object.keys(profile.opening_lines).length > 0 ? (
+              <div className="space-y-3">
+                {Object.entries(profile.opening_lines).map(([key, data], idx) => (
+                  <div
+                    key={key}
+                    className="bg-gradient-to-r from-purple-900/20 to-purple-800/10 border border-purple-700/30 hover:border-purple-600/50 rounded-xl p-4 hover:shadow-lg hover:shadow-purple-500/20 transition-all duration-300 group/card"
+                  >
+                    <div className="flex items-start gap-3 mb-2">
+                      <div className="bg-purple-500/30 text-purple-200 px-3 py-1 rounded-lg text-xs font-bold group-hover/card:bg-purple-500/50 transition">
+                        #{idx + 1}
+                      </div>
+                      <div className="flex-1">
+                        <div className="text-sm font-semibold text-white mb-1">
+                          {data.role ||
+                            key
+                              .replace(/_/g, " ")
+                              .replace(/\b\w/g, (l) => l.toUpperCase())}
+                        </div>
+                        {data.context && (
+                          <p className="text-xs text-gray-400 mb-2 italic">
+                            "{data.context}"
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <p className="text-sm text-gray-300 leading-relaxed pl-12 group-hover/card:text-gray-200 transition">
+                      "{data.message || data}"
+                    </p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-gray-500 italic text-sm">
+                AI-generated opening lines will appear here...
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Data Sources */}
+        {profile?.data_sources && Array.isArray(profile.data_sources) && profile.data_sources.length > 0 && (
+          <div className="group bg-gradient-to-br from-[#1A1D21]/60 to-[#0F1113]/60 backdrop-blur-xl border border-gray-800/30 hover:border-gray-700/50 rounded-2xl p-6 md:p-8 transition-all duration-300">
+            <div className="flex items-center gap-3 mb-5">
+              <div className="p-2 bg-gray-700/30 rounded-lg">
+                <Database size={20} className="text-gray-400" />
+              </div>
+              <h2 className="text-lg font-semibold">Data Sources</h2>
+              <span className="text-xs bg-gray-700/50 text-gray-300 px-3 py-1 rounded-full">
+                {profile.data_sources.length}
+              </span>
+            </div>
+            <div className="space-y-2">
+              {profile.data_sources.slice(0, 5).map((source, idx) => (
+                <a
+                  key={idx}
+                  href={source}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 text-sm text-gray-400 hover:text-[#5B9FED] transition group/link p-2 rounded-lg hover:bg-gray-800/30"
+                >
+                  <ExternalLink size={14} className="shrink-0 group-hover/link:translate-x-1 transition-transform" />
+                  <span className="truncate group-hover/link:underline">
+                    {source}
                   </span>
-                )}
-              </div>
-              <div className="text-sm text-gray-300 leading-relaxed space-y-3">
-                {profile?.executive_summary ? (
-                  <p>{profile.executive_summary}</p>
-                ) : (
-                  <p className="text-gray-500 italic">
-                    AI-generated executive summary will appear here...
-                  </p>
-                )}
-              </div>
+                </a>
+              ))}
+              {profile.data_sources.length > 5 && (
+                <p className="text-xs text-gray-500 mt-3 pl-6">
+                  + {profile.data_sources.length - 5} more sources
+                </p>
+              )}
             </div>
+          </div>
+        )}
+      </div>
 
-            {/* Potential Needs & Pain Points */}
-            <div className="bg-[#1A1D21] border border-gray-800 rounded-2xl p-4 md:p-6">
-              <div className="flex items-center gap-2 mb-4">
-                <TrendingUp size={20} className="text-[#5B9FED]" />
-                <h2 className="text-lg font-semibold">
-                  Potential Needs & Pain Points
-                </h2>
-              </div>
-              <div className="space-y-4">
-                {profile?.pain_points &&
-                Array.isArray(profile.pain_points) &&
-                profile.pain_points.length > 0 ? (
-                  <ul className="space-y-3">
-                    {profile.pain_points.map((point, idx) => (
-                      <li key={idx} className="flex gap-3">
-                        <span className="text-[#5B9FED] mt-1">•</span>
-                        <div>
-                          <div className="font-medium text-white">
-                            {point.title || point}
-                          </div>
-                          {point.description && (
-                            <div className="text-sm text-gray-400 mt-1">
-                              {point.description}
-                            </div>
-                          )}
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <div className="text-gray-500 italic text-sm">
-                    AI-generated needs and pain points will appear here...
-                  </div>
-                )}
-              </div>
+      {/* Right Column - Sidebar */}
+      <div className="space-y-6">
+        {/* Quick Facts */}
+        <div className="group bg-gradient-to-br from-[#1A1D21]/60 to-[#0F1113]/60 backdrop-blur-xl border border-gray-800/30 hover:border-blue-500/30 rounded-2xl p-6 transition-all duration-300 hover:shadow-xl hover:shadow-blue-500/10">
+          <div className="flex items-center gap-2 mb-5">
+            <div className="p-2 bg-blue-500/20 rounded-lg">
+              <CheckCircle2 size={18} className="text-blue-400" />
             </div>
+            <h3 className="text-base font-semibold">Quick Facts</h3>
+          </div>
+          <div className="space-y-4 text-sm">
+            {[
+              { label: "Industry", value: profile?.overview?.industry },
+              { label: "Employees", value: profile?.overview?.employee_count },
+              { label: "Location", value: profile?.overview?.location },
+              { label: "Founded", value: profile?.overview?.founded_year },
+            ].map((fact, idx) => (
+              <div key={idx} className="pb-4 border-b border-gray-800/30 last:border-0 last:pb-0">
+                <div className="text-gray-500 mb-1 text-xs uppercase tracking-wide">{fact.label}</div>
+                <div className="text-white font-medium group-hover:text-gray-100 transition">
+                  {fact.value || "N/A"}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
 
-            {/* Tech Stack */}
-            <div className="bg-[#1A1D21] border border-gray-800 rounded-2xl p-4 md:p-6">
-              <div className="flex items-center gap-2 mb-4">
-                <Wrench size={20} className="text-[#5B9FED]" />
-                <h2 className="text-lg font-semibold">Tech Stack</h2>
-                <Info size={16} className="text-gray-500" />
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {profile?.tech_stack &&
-                Array.isArray(profile.tech_stack) &&
-                profile.tech_stack.length > 0 ? (
-                  profile.tech_stack.map((tech, idx) => (
-                    <span
-                      key={idx}
-                      className="px-3 py-1.5 bg-[#2A2D33] border border-gray-700 rounded-lg text-sm text-gray-300 hover:border-[#5B9FED] transition"
-                    >
-                      {tech}
-                    </span>
-                  ))
-                ) : (
-                  <div className="text-gray-500 italic text-sm">
-                    Technology stack will appear here...
-                  </div>
-                )}
-              </div>
+        {/* Key Contacts */}
+        <div className="group bg-gradient-to-br from-[#1A1D21]/60 to-[#0F1113]/60 backdrop-blur-xl border border-gray-800/30 hover:border-[#5B9FED]/30 rounded-2xl p-6 transition-all duration-300 hover:shadow-xl hover:shadow-[#5B9FED]/10">
+          <div className="flex items-center gap-2 mb-5">
+            <div className="p-2 bg-[#5B9FED]/20 rounded-lg">
+              <UserCircle2 size={18} className="text-[#5B9FED]" />
             </div>
-
-            {/* AI Generated Opening Lines */}
-            <div className="bg-[#1A1D21] border border-gray-800 rounded-2xl p-4 md:p-6">
-              <div className="flex items-center gap-2 mb-4">
-                <Lightbulb size={20} className="text-[#5B9FED]" />
-                <h2 className="text-lg font-semibold">
-                  AI Generated Opening Lines
-                </h2>
-                <span className="text-xs bg-purple-500/20 text-purple-400 px-2 py-1 rounded">
-                  NEW
-                </span>
-              </div>
-              <div className="space-y-4">
-                {profile?.opening_lines &&
-                typeof profile.opening_lines === "object" &&
-                Object.keys(profile.opening_lines).length > 0 ? (
-                  <div className="space-y-4">
-                    {Object.entries(profile.opening_lines).map(
-                      ([key, data], idx) => (
-                        <div
-                          key={key}
-                          className="bg-[#2A2D33] border border-gray-700 rounded-lg p-4"
-                        >
-                          <div className="flex items-start gap-3 mb-3">
-                            <div className="bg-[#5B9FED]/20 text-[#5B9FED] px-2 py-1 rounded text-xs font-medium">
-                              {idx + 1}
-                            </div>
-                            <div className="flex-1">
-                              <div className="text-sm font-semibold text-white mb-1">
-                                {data.role ||
-                                  key
-                                    .replace(/_/g, " ")
-                                    .replace(/\b\w/g, (l) => l.toUpperCase())}
-                              </div>
-                              {data.context && (
-                                <p className="text-xs text-gray-500 mb-2 italic">
-                                  {data.context}
-                                </p>
-                              )}
-                              <p className="text-sm text-gray-300 leading-relaxed">
-                                "{data.message || data}"
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      )
-                    )}
+            <h3 className="text-base font-semibold">Key Contacts</h3>
+          </div>
+          <div className="space-y-3">
+            {profile?.key_contacts && Array.isArray(profile.key_contacts) && profile.key_contacts.length > 0 ? (
+              profile.key_contacts.map((contact, idx) => (
+                <div
+                  key={idx}
+                  className="pb-3 border-b border-gray-800/30 last:border-0 last:pb-0 group/contact hover:bg-gray-800/20 p-2 rounded-lg transition"
+                >
+                  <div className="font-medium text-white text-sm mb-2">
+                    {contact.name || "Unknown"}
                   </div>
-                ) : (
-                  <div className="text-gray-500 italic text-sm">
-                    AI-generated opening lines will appear here...
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Data Sources */}
-            {profile?.data_sources &&
-              Array.isArray(profile.data_sources) &&
-              profile.data_sources.length > 0 && (
-                <div className="bg-[#1A1D21] border border-gray-800 rounded-2xl p-4 md:p-6">
-                  <div className="flex items-center gap-2 mb-4">
-                    <Database size={20} className="text-[#5B9FED]" />
-                    <h2 className="text-lg font-semibold">Data Sources</h2>
-                    <span className="text-xs bg-gray-700 text-gray-300 px-2 py-1 rounded">
-                      {profile.data_sources.length} sources
-                    </span>
-                  </div>
-                  <div className="space-y-2">
-                    {profile.data_sources.slice(0, 5).map((source, idx) => (
+                  <div className="space-y-1">
+                    {contact.linkedin && (
                       <a
-                        key={idx}
-                        href={source}
+                        href={contact.linkedin}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-2 text-sm text-gray-400 hover:text-[#5B9FED] transition group"
+                        className="text-xs text-[#5B9FED] hover:text-[#7BADFF] transition flex items-center gap-1"
                       >
-                        <ExternalLink size={14} className="shrink-0" />
-                        <span className="truncate group-hover:underline">
-                          {source}
-                        </span>
+                        🔗 LinkedIn
                       </a>
-                    ))}
-                    {profile.data_sources.length > 5 && (
-                      <p className="text-xs text-gray-500 mt-2">
-                        + {profile.data_sources.length - 5} more sources
-                      </p>
+                    )}
+                    {contact.email && (
+                      <a
+                        href={`mailto:${contact.email}`}
+                        className="text-xs text-[#5B9FED] hover:text-[#7BADFF] transition flex items-center gap-1 truncate"
+                      >
+                        ✉️ <span className="truncate">{contact.email}</span>
+                      </a>
+                    )}
+                    {contact.phone && (
+                      <a
+                        href={`tel:${contact.phone}`}
+                        className="text-xs text-[#5B9FED] hover:text-[#7BADFF] transition flex items-center gap-1"
+                      >
+                        📞 {contact.phone}
+                      </a>
                     )}
                   </div>
                 </div>
-              )}
-          </div>
-
-          {/* Right Column - Sidebar */}
-          <div className="space-y-6">
-            {/* Quick Facts */}
-            <div className="bg-[#2A3441] border border-gray-700 rounded-2xl p-4 md:p-6">
-              <div className="flex items-center gap-2 mb-5">
-                <h3 className="text-base font-semibold">Quick Facts</h3>
-                <Info size={14} className="text-gray-500" />
+              ))
+            ) : (
+              <div className="text-gray-500 italic text-sm">
+                Key contacts will appear here...
               </div>
-              <div className="space-y-4 text-sm">
-                <div>
-                  <div className="text-gray-400 mb-1">Industry</div>
-                  <div className="text-white font-medium">
-                    {profile?.overview?.industry || "N/A"}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-gray-400 mb-1">Employees Count</div>
-                  <div className="text-white font-medium">
-                    {profile?.overview?.employee_count || "N/A"}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-gray-400 mb-1">Location</div>
-                  <div className="text-white font-medium">
-                    {profile?.overview?.location || "N/A"}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-gray-400 mb-1">Founded</div>
-                  <div className="text-white font-medium">
-                    {profile?.overview?.founded_year || "N/A"}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Key Contacts */}
-            <div className="bg-[#1A1D21] border border-gray-800 rounded-2xl p-4 md:p-6">
-              <div className="flex items-center gap-2 mb-5">
-                <UserCircle2 size={20} className="text-[#5B9FED]" />
-                <h3 className="text-base font-semibold">Key Contacts</h3>
-              </div>
-              <div className="space-y-4">
-                {profile?.key_contacts &&
-                Array.isArray(profile.key_contacts) &&
-                profile.key_contacts.length > 0 ? (
-                  profile.key_contacts.map((contact, idx) => (
-                    <div
-                      key={idx}
-                      className="border-b border-gray-800 pb-3 last:border-0"
-                    >
-                      <div className="font-medium text-white text-sm">
-                        {contact.name || "Unknown"}
-                      </div>
-                      <div className="mt-2 space-y-1">
-                        {contact.linkedin && (
-                          <a
-                            href={contact.linkedin}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-xs text-[#5B9FED] hover:underline block"
-                          >
-                            🔗 LinkedIn Profile
-                          </a>
-                        )}
-                        {contact.email && (
-                          <a
-                            href={`mailto:${contact.email}`}
-                            className="text-xs text-[#5B9FED] hover:underline block"
-                          >
-                            ✉️ {contact.email}
-                          </a>
-                        )}
-                        {contact.phone && (
-                          <a
-                            href={`tel:${contact.phone}`}
-                            className="text-xs text-[#5B9FED] hover:underline block"
-                          >
-                            📞 {contact.phone}
-                          </a>
-                        )}
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="text-gray-500 italic text-sm">
-                    Key contacts will appear here...
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Recent Signals */}
-            <div className="bg-[#3D2644] border border-purple-900/30 rounded-2xl p-4 md:p-6">
-              <div className="flex items-center gap-2 mb-5">
-                <TrendingUp size={20} className="text-purple-400" />
-                <h3 className="text-base font-semibold">Recent Signals</h3>
-              </div>
-              <div className="space-y-3">
-                {profile?.recent_news_signals &&
-                Array.isArray(profile.recent_news_signals) &&
-                profile.recent_news_signals.length > 0 ? (
-                  profile.recent_news_signals.slice(0, 5).map((news, idx) => (
-                    <div
-                      key={idx}
-                      className="border-l-2 border-purple-500 pl-3"
-                    >
-                      <div className="text-sm font-medium text-white mb-1">
-                        {news.signal_type || "News Update"}
-                      </div>
-                      {news.summary && (
-                        <p className="text-xs text-gray-400 mb-2 line-clamp-2">
-                          {news.summary}
-                        </p>
-                      )}
-                      <div className="flex items-center gap-2 text-xs text-gray-500">
-                        {news.published_date && (
-                          <span>
-                            {new Date(news.published_date).toLocaleDateString()}
-                          </span>
-                        )}
-                        {news.url && (
-                          <>
-                            <span>•</span>
-                            <a
-                              href={news.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-purple-400 hover:underline"
-                            >
-                              Read more
-                            </a>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="text-gray-400 italic text-sm">
-                    Recent signals will appear here...
-                  </div>
-                )}
-              </div>
-            </div>
+            )}
           </div>
         </div>
-      </main>
 
-      <ChatModal
-        isOpen={isChatOpen}
-        onClose={() => setIsChatOpen(false)}
-        profileData={profile}
-      />
+        {/* Recent Signals */}
+        <div className="group bg-gradient-to-br from-purple-900/20 to-purple-800/10 backdrop-blur-xl border border-purple-800/30 hover:border-purple-600/50 rounded-2xl p-6 transition-all duration-300 hover:shadow-xl hover:shadow-purple-500/10">
+          <div className="flex items-center gap-2 mb-5">
+            <div className="p-2 bg-purple-500/20 rounded-lg">
+              <TrendingUp size={18} className="text-purple-400" />
+            </div>
+            <h3 className="text-base font-semibold">Recent Signals</h3>
+          </div>
+          <div className="space-y-2.5">
+            {profile?.recent_news_signals && Array.isArray(profile.recent_news_signals) && profile.recent_news_signals.length > 0 ? (
+              profile.recent_news_signals.slice(0, 5).map((news, idx) => (
+                <div
+                  key={idx}
+                  className="border-l-2 border-purple-500 pl-3 py-2 hover:bg-purple-500/10 p-2 rounded-r-lg transition group/signal"
+                >
+                  <div className="text-xs font-bold text-purple-300 mb-1 uppercase tracking-wide">
+                    {news.signal_type || "News"}
+                  </div>
+                  {news.summary && (
+                    <p className="text-xs text-gray-400 mb-2 line-clamp-2 group-hover/signal:text-gray-300 transition">
+                      {news.summary}
+                    </p>
+                  )}
+                  <div className="flex items-center gap-2 text-xs text-gray-500">
+                    {news.published_date && (
+                      <span>
+                        {new Date(news.published_date).toLocaleDateString()}
+                      </span>
+                    )}
+                    {news.url && (
+                      <>
+                        <span>•</span>
+                        <a
+                          href={news.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-purple-400 hover:text-purple-300 hover:underline transition"
+                        >
+                          Read
+                        </a>
+                      </>
+                    )}
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="text-gray-400 italic text-sm">
+                Recent signals will appear here...
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
-  );
+  </main>
+
+  <ChatModal
+    isOpen={isChatOpen}
+    onClose={() => setIsChatOpen(false)}
+    profileData={profile}
+  />
+</div>
+);
 }

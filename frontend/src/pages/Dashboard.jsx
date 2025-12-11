@@ -9,12 +9,30 @@ import {
   Trash2,
   X,
   Menu,
+  ChevronDown,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { profileAPI } from "../services/api";
+
+// Decorative Background Elements Component
+const DecorativeBackground = () => (
+  <div className="absolute inset-0 overflow-hidden pointer-events-none">
+    {/* Top-left triangle */}
+    <div className="absolute -top-20 -left-20 w-64 h-64 bg-gradient-to-br from-[#5B9FED]/10 to-transparent rounded-full blur-3xl"></div>
+    
+    {/* Top-right circle */}
+    <div className="absolute -top-32 -right-32 w-80 h-80 bg-gradient-to-bl from-[#5B9FED]/5 to-transparent rounded-full blur-3xl"></div>
+    
+    {/* Bottom-left circle */}
+    <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-gradient-to-tr from-[#5B9FED]/5 to-transparent rounded-full blur-3xl"></div>
+    
+    {/* Center accent */}
+    <div className="absolute top-1/2 right-1/4 w-72 h-72 bg-gradient-to-bl from-purple-500/5 to-transparent rounded-full blur-3xl"></div>
+  </div>
+);
 
 export default function Dashboard() {
   const [profiles, setProfiles] = useState([]);
@@ -46,6 +64,9 @@ export default function Dashboard() {
   const [updateSuccess, setUpdateSuccess] = useState("");
   const [updating, setUpdating] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [showProfileDropdown, setShowProfileDropdown] = useState(false);
+  const [userAvatar, setUserAvatar] = useState(null);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
   // Polling State
   const [polling, setPolling] = useState(false);
@@ -327,13 +348,14 @@ export default function Dashboard() {
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = () => {
-      if (openDropdownId) {
+      if (openDropdownId || showProfileDropdown) {
         setOpenDropdownId(null);
+        setShowProfileDropdown(false);
       }
     };
     document.addEventListener("click", handleClickOutside);
     return () => document.removeEventListener("click", handleClickOutside);
-  }, [openDropdownId]);
+  }, [openDropdownId, showProfileDropdown]);
 
   // Handle delete button click
   const handleDeleteClick = (profile, event) => {
@@ -437,13 +459,55 @@ export default function Dashboard() {
     });
   };
 
+  // Handle avatar upload
+  const handleAvatarUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please upload an image file");
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image must be less than 5MB");
+      return;
+    }
+
+    setUploadingAvatar(true);
+    try {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setUserAvatar(event.target?.result);
+        localStorage.setItem("userAvatar", event.target?.result);
+        toast.success("Profile picture updated!");
+      };
+      reader.readAsDataURL(file);
+    } catch (error) {
+      console.error("Error uploading avatar:", error);
+      toast.error("Failed to upload profile picture");
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
+
+  // Load avatar from localStorage on mount
+  useEffect(() => {
+    const savedAvatar = localStorage.getItem("userAvatar");
+    if (savedAvatar) {
+      setUserAvatar(savedAvatar);
+    }
+  }, []);
+
   return (
-    <div className="min-h-screen bg-[#0F1113] text-white flex">
+    <div className="min-h-screen bg-gradient-to-br from-[#0F1113] via-[#1a1d22] to-[#0F1113] text-white flex overflow-hidden">
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-[#1A1D21] border border-gray-700 rounded-2xl p-6 max-w-md w-full mx-4">
-            <h3 className="text-xl font-semibold mb-4">Delete Profile</h3>
+          <div className="bg-gradient-to-br from-[#1A1D21] to-[#252830] border border-gray-700 rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl">
+            <h3 className="text-xl font-bold mb-4">Delete Profile</h3>
             <p className="text-gray-400 mb-6">
               Are you sure you want to delete the profile for{" "}
               <span className="text-white font-semibold">
@@ -508,9 +572,9 @@ export default function Dashboard() {
       {/* Settings Modal */}
       {showSettingsModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-[#1A1D21] border border-gray-700 rounded-2xl p-6 max-w-md w-full mx-4">
+          <div className="bg-gradient-to-br from-[#1A1D21] to-[#252830] border border-gray-700 rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-semibold flex items-center gap-2">
+              <h3 className="text-xl font-bold flex items-center gap-2">
                 <Settings size={24} className="text-[#5B9FED]" />
                 Settings
               </h3>
@@ -553,13 +617,13 @@ export default function Dashboard() {
 
               {/* User Information */}
               <div>
-                <h4 className="text-sm font-semibold text-gray-400 mb-3">
+                <h4 className="text-sm font-bold text-gray-300 mb-3">
                   Account Information
                 </h4>
 
                 {!editMode ? (
                   // View Mode
-                  <div className="bg-[#2A2D33] border border-gray-700 rounded-lg p-4 space-y-3">
+                  <div className="bg-[#2A2D33]/60 border border-gray-700/50 rounded-lg p-4 space-y-3">
                     <div>
                       <label className="text-xs text-gray-500">Username</label>
                       <div className="text-white font-medium">
@@ -579,7 +643,7 @@ export default function Dashboard() {
                   </div>
                 ) : (
                   // Edit Mode
-                  <div className="bg-[#2A2D33] border border-gray-700 rounded-lg p-4 space-y-4">
+                  <div className="bg-[#2A2D33]/60 border border-gray-700/50 rounded-lg p-4 space-y-4">
                     <div>
                       <label className="text-xs text-gray-400 mb-1 block">
                         Username
@@ -608,7 +672,7 @@ export default function Dashboard() {
                     </div>
 
                     <div className="pt-3 border-t border-gray-600">
-                      <h5 className="text-xs font-semibold text-gray-400 mb-3">
+                      <h5 className="text-xs font-bold text-gray-400 mb-3">
                         Change Password (Optional)
                       </h5>
                       <div className="space-y-3">
@@ -659,11 +723,11 @@ export default function Dashboard() {
 
               {/* Statistics */}
               <div>
-                <h4 className="text-sm font-semibold text-gray-400 mb-3">
+                <h4 className="text-sm font-bold text-gray-300 mb-3">
                   Statistics
                 </h4>
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-[#2A2D33] border border-gray-700 rounded-lg p-3">
+                  <div className="bg-gradient-to-br from-[#5B9FED]/20 to-[#5B9FED]/5 border border-[#5B9FED]/30 rounded-lg p-3">
                     <div className="text-xs text-gray-500 mb-1">
                       Total Profiles
                     </div>
@@ -671,7 +735,7 @@ export default function Dashboard() {
                       {profiles.length}
                     </div>
                   </div>
-                  <div className="bg-[#2A2D33] border border-gray-700 rounded-lg p-3">
+                  <div className="bg-gradient-to-br from-yellow-400/20 to-yellow-400/5 border border-yellow-400/30 rounded-lg p-3">
                     <div className="text-xs text-gray-500 mb-1">Favorites</div>
                     <div className="text-2xl font-bold text-yellow-400">
                       {profiles.filter((p) => p.is_favorite).length}
@@ -757,23 +821,22 @@ export default function Dashboard() {
         />
       )}
 
-      {/* Sidebar */}
+      {/* Enhanced Sidebar */}
       <aside
-        className={`fixed md:static inset-y-0 left-0 z-50 w-64 bg-[#1A1D21] border-r border-gray-800 flex flex-col transition-transform duration-300 ease-in-out ${
+        className={`fixed md:static inset-y-0 left-0 z-50 w-64 bg-gradient-to-b from-[#1A1D21] to-[#0F1113] border-r border-gray-800/50 flex flex-col transition-transform duration-300 ease-in-out ${
           isMobileSidebarOpen
             ? "translate-x-0"
             : "-translate-x-full md:translate-x-0"
         }`}
       >
-        {/* Logo */}
-        <div className="p-6 border-b border-gray-800 flex justify-between items-center">
-          {/* Use public/SIFT no BG.png — public files are served from root */}
+        {/* Logo Section */}
+        <div className="p-6 border-b border-gray-800/50 flex justify-center items-center">
           <a href="/">
             <img src="/SIFT%20no%20BG.png" alt="SIFT" className="w-24 h-auto" />
           </a>
           <button
             onClick={() => setIsMobileSidebarOpen(false)}
-            className="md:hidden text-gray-400 hover:text-white"
+            className="md:hidden text-gray-400 hover:text-white absolute right-6"
           >
             <X size={20} />
           </button>
@@ -785,8 +848,8 @@ export default function Dashboard() {
             onClick={() => setActiveTab("dashboard")}
             className={`w-full text-left px-4 py-3 rounded-lg font-medium transition ${
               activeTab === "dashboard"
-                ? "bg-[#5B9FED] text-white"
-                : "text-gray-400 hover:text-white hover:bg-gray-800"
+                ? "bg-gradient-to-r from-[#5B9FED] to-[#4A8FDD] text-white shadow-lg shadow-[#5B9FED]/25"
+                : "text-gray-400 hover:text-white hover:bg-gray-800/50"
             }`}
           >
             Dashboard
@@ -798,8 +861,8 @@ export default function Dashboard() {
             }}
             className={`w-full text-left px-4 py-3 rounded-lg font-medium transition ${
               activeTab === "favorites"
-                ? "bg-[#5B9FED] text-white"
-                : "text-gray-400 hover:text-white hover:bg-gray-800"
+                ? "bg-gradient-to-r from-[#5B9FED] to-[#4A8FDD] text-white shadow-lg shadow-[#5B9FED]/25"
+                : "text-gray-400 hover:text-white hover:bg-gray-800/50"
             }`}
           >
             Favorites
@@ -811,49 +874,19 @@ export default function Dashboard() {
             }}
             className={`w-full text-left px-4 py-3 rounded-lg font-medium transition ${
               activeTab === "history"
-                ? "bg-[#5B9FED] text-white"
-                : "text-gray-400 hover:text-white hover:bg-gray-800"
+                ? "bg-gradient-to-r from-[#5B9FED] to-[#4A8FDD] text-white shadow-lg shadow-[#5B9FED]/25"
+                : "text-gray-400 hover:text-white hover:bg-gray-800/50"
             }`}
           >
             History
           </button>
         </nav>
-
-        {/* Bottom Navigation */}
-        <div className="p-4 border-t border-gray-800 space-y-2">
-          <button
-            onClick={() => setShowSettingsModal(true)}
-            className="w-full text-left px-4 py-3 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg font-medium transition flex items-center gap-2"
-          >
-            <Settings size={18} />
-            Settings
-          </button>
-          <button
-            onClick={logout}
-            className="w-full text-left px-4 py-3 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg font-medium transition flex items-center gap-2"
-          >
-            Logout
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-              />
-            </svg>
-          </button>
-        </div>
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col w-full">
+      <main className="flex-1 flex flex-col w-full overflow-hidden">
         {/* Top Bar */}
-        <header className="bg-[#1A1D21] border-b border-gray-800 px-4 md:px-8 py-4">
+        <header className="bg-gradient-to-r from-[#1A1D21] to-[#252830] border-b border-gray-800/50 px-4 md:px-8 py-4 shadow-lg">
           <div className="flex items-center justify-between gap-4">
             <button
               className="md:hidden text-gray-400 hover:text-white shrink-0"
@@ -873,277 +906,409 @@ export default function Dashboard() {
                   placeholder="Search profiles..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-[#2A2D33] border border-gray-700 rounded-lg pl-10 pr-4 py-2 text-sm text-white placeholder-gray-500 outline-none focus:border-[#5B9FED] transition"
+                  className="w-full bg-[#2A2D33] border border-gray-700/50 rounded-lg pl-10 pr-4 py-2 text-sm text-white placeholder-gray-500 outline-none focus:border-[#5B9FED] focus:shadow-lg focus:shadow-[#5B9FED]/20 transition"
                 />
               </div>
             </div>
 
-            <div className="flex items-center gap-3 shrink-0">
-              <div className="w-8 h-8 md:w-10 md:h-10 bg-gray-300 rounded-full"></div>
-              <div className="text-right hidden md:block">
-                <div className="text-sm font-medium">
-                  {user?.username || user?.email || "Guest"}
+            {/* Profile Section with Dropdown */}
+            <div className="flex items-center gap-3 shrink-0 relative">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowProfileDropdown(!showProfileDropdown);
+                }}
+                className="flex items-center gap-3 hover:bg-gray-800/30 p-2 rounded-lg transition cursor-pointer"
+              >
+                {userAvatar ? (
+                  <img
+                    src={userAvatar}
+                    alt="Profile"
+                    className="w-8 h-8 md:w-10 md:h-10 bg-gradient-to-br from-[#5B9FED] to-[#4A8FDD] rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="w-8 h-8 md:w-10 md:h-10 bg-gradient-to-br from-[#5B9FED] to-[#4A8FDD] rounded-full"></div>
+                )}
+                <div className="text-right hidden md:block">
+                  <div className="text-sm font-medium">
+                    {user?.username || user?.email || "Guest"}
+                  </div>
+                  <div className="text-xs text-gray-500">User</div>
                 </div>
-                <div className="text-xs text-gray-500">User</div>
-              </div>
+                <ChevronDown
+                  size={16}
+                  className={`text-gray-500 transition-transform ${
+                    showProfileDropdown ? "rotate-180" : ""
+                  }`}
+                />
+              </button>
+
+              {/* Profile Dropdown Menu */}
+              {showProfileDropdown && (
+                <div className="absolute right-0 top-14 w-72 bg-gradient-to-br from-[#1D2530] to-[#2A2D33] border border-gray-700/50 rounded-2xl shadow-2xl z-50">
+                  {/* User Info Section */}
+                  <div className="p-4 border-b border-gray-700/50">
+                    <div className="flex items-center gap-3">
+                      <div className="relative group/avatar">
+                        {userAvatar ? (
+                          <img
+                            src={userAvatar}
+                            alt="Profile"
+                            className="w-12 h-12 rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-12 h-12 bg-gradient-to-br from-[#5B9FED] to-[#4A8FDD] rounded-full flex items-center justify-center">
+                            <span className="text-lg font-bold text-white">
+                              {(user?.username || user?.email || "G")
+                                .charAt(0)
+                                .toUpperCase()}
+                            </span>
+                          </div>
+                        )}
+                        <label className="absolute inset-0 cursor-pointer rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover/avatar:opacity-100 transition">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleAvatarUpload}
+                            disabled={uploadingAvatar}
+                            className="hidden"
+                          />
+                          <svg
+                            className="w-5 h-5 text-white"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0118.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
+                            />
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
+                            />
+                          </svg>
+                        </label>
+                      </div>
+                      <div className="flex-1">
+                        <div className="text-sm font-bold">
+                          {user?.username || user?.email || "Guest"}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {user?.email || "No email"}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-xs text-gray-500 mt-2">
+                      Hover on avatar to change picture
+                    </div>
+                  </div>
+
+                  {/* Menu Items */}
+                  <div className="p-2 space-y-1">
+                    <button
+                      onClick={() => {
+                        setShowSettingsModal(true);
+                        setShowProfileDropdown(false);
+                      }}
+                      className="w-full text-left px-4 py-3 text-gray-400 hover:text-white hover:bg-gray-800/50 rounded-lg font-medium transition flex items-center gap-3"
+                    >
+                      <Settings size={18} />
+                      Settings
+                    </button>
+                    <button
+                      onClick={() => {
+                        logout();
+                        setShowProfileDropdown(false);
+                      }}
+                      className="w-full text-left px-4 py-3 text-gray-400 hover:text-red-400 hover:bg-gray-800/50 rounded-lg font-medium transition flex items-center gap-3"
+                    >
+                      <svg
+                        className="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                        />
+                      </svg>
+                      Logout
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </header>
 
         {/* Content Area */}
-        <div className="flex-1 overflow-auto px-4 md:px-8 py-6 md:py-8">
-          {/* Page Title */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold mb-2">
-              {activeTab === "dashboard"
-                ? "Dashboard"
-                : activeTab === "favorites"
-                ? "Favorites"
-                : "History"}
-            </h1>
-            <p className="text-gray-400 text-sm">
-              {activeTab === "dashboard" &&
-                "Start profiling a company or view your saved prospects."}
-              {activeTab === "favorites" && "Your saved favorite prospects."}
-              {activeTab === "history" &&
-                "Recently viewed or generated profiles."}
-            </p>
-          </div>
+        <div className="flex-1 overflow-auto px-4 md:px-8 py-6 md:py-8 relative">
+          <DecorativeBackground />
+          
+          <div className="relative z-10">
+            {/* Page Title */}
+            <div className="mb-8">
+              <h1 className="text-4xl md:text-5xl font-bold mb-2 bg-gradient-to-r from-white via-gray-100 to-gray-400 bg-clip-text text-transparent">
+                {activeTab === "dashboard"
+                  ? "Dashboard"
+                  : activeTab === "favorites"
+                  ? "Favorites"
+                  : "History"}
+              </h1>
+              <p className="text-gray-400 text-sm">
+                {activeTab === "dashboard" &&
+                  "Start profiling a company or view your saved prospects."}
+                {activeTab === "favorites" && "Your saved favorite prospects."}
+                {activeTab === "history" &&
+                  "Recently viewed or generated profiles."}
+              </p>
+            </div>
 
-          {/* Input Section (only on dashboard) */}
-          <div className="bg-[#1A1D21] border border-gray-700 rounded-2xl p-6 md:p-8 mb-8 md:mb-10">
-            {activeTab === "dashboard" ? (
-              <>
-                <label className="block text-sm font-medium mb-4">
-                  Enter a company name or Website
-                </label>
-                <div className="flex flex-col md:flex-row gap-4">
-                  <input
-                    type="text"
-                    placeholder="Enter here"
-                    value={companyInput}
-                    onChange={(e) => setCompanyInput(e.target.value)}
-                    onKeyPress={(e) =>
-                      e.key === "Enter" && handleGenerateProfile()
-                    }
-                    disabled={
-                      generating ||
-                      loading ||
-                      profiles.some((p) => p.status === "processing")
-                    }
-                    className="flex-1 bg-[#2A2D33] border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 outline-none focus:border-[#5B9FED] transition disabled:opacity-50 disabled:cursor-not-allowed"
-                  />
-                  <button
-                    onClick={handleGenerateProfile}
-                    disabled={
-                      generating ||
-                      loading ||
-                      !companyInput.trim() ||
-                      profiles.some((p) => p.status === "processing")
-                    }
-                    className="bg-[#5B9FED] hover:bg-[#4A8DD9] px-8 py-3 rounded-lg font-medium transition disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap flex items-center justify-center gap-2"
-                  >
-                    {generating ||
-                    profiles.some((p) => p.status === "processing") ? (
-                      <>
-                        <Loader2 className="animate-spin" size={20} />
-                        Processing...
-                      </>
-                    ) : (
-                      "Generate Profile"
-                    )}
-                  </button>
+            {/* Input Section */}
+            <div className="bg-gradient-to-br from-[#1A1D21] to-[#252830] border border-gray-700/50 rounded-2xl p-6 md:p-8 mb-8 md:mb-10 shadow-2xl hover:shadow-[#5B9FED]/10 transition-shadow">
+              {activeTab === "dashboard" ? (
+                <>
+                  <label className="block text-sm font-bold mb-4">
+                    Enter a company name or Website
+                  </label>
+                  <div className="flex flex-col md:flex-row gap-4">
+                    <input
+                      type="text"
+                      placeholder="Enter here"
+                      value={companyInput}
+                      onChange={(e) => setCompanyInput(e.target.value)}
+                      onKeyPress={(e) =>
+                        e.key === "Enter" && handleGenerateProfile()
+                      }
+                      disabled={
+                        generating ||
+                        loading ||
+                        profiles.some((p) => p.status === "processing")
+                      }
+                      className="flex-1 bg-[#2A2D33] border border-gray-700/50 rounded-lg px-4 py-3 text-white placeholder-gray-500 outline-none focus:border-[#5B9FED] focus:shadow-lg focus:shadow-[#5B9FED]/20 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    />
+                    <button
+                      onClick={handleGenerateProfile}
+                      disabled={
+                        generating ||
+                        loading ||
+                        !companyInput.trim() ||
+                        profiles.some((p) => p.status === "processing")
+                      }
+                      className="bg-gradient-to-r from-[#5B9FED] to-[#4A8FDD] hover:from-[#4A8FDD] hover:to-[#3A7FCD] px-8 py-3 rounded-lg font-bold transition disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap flex items-center justify-center gap-2 shadow-lg shadow-[#5B9FED]/30"
+                    >
+                      {generating ||
+                      profiles.some((p) => p.status === "processing") ? (
+                        <>
+                          <Loader2 className="animate-spin" size={20} />
+                          Processing...
+                        </>
+                      ) : (
+                        "Generate Profile"
+                      )}
+                    </button>
+                  </div>
+                  {generating && (
+                    <div className="mt-4 text-sm text-gray-400 flex items-center gap-2 animate-pulse">
+                      <div className="w-2 h-2 bg-[#5B9FED] rounded-full animate-bounce"></div>
+                      AI is analyzing {companyInput || "the company"}... This may
+                      take a few minutes. You can wait here or check back later.
+                    </div>
+                  )}
+                </>
+              ) : (
+                <button
+                  onClick={() => setActiveTab("dashboard")}
+                  className="w-full text-center text-xs text-gray-400 hover:text-white hover:bg-gray-800/30 px-4 py-2 rounded-lg transition cursor-pointer"
+                >
+                  ← Back to Dashboard to generate new profiles
+                </button>
+              )}
+            </div>
+
+            {/* Listing Area */}
+            <div>
+              {((activeTab === "dashboard" && loading) ||
+                (activeTab === "favorites" && favoritesLoading) ||
+                (activeTab === "history" && historyLoading)) && (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {[1, 2, 3].map((i) => (
+                    <div
+                      key={i}
+                      className="bg-gradient-to-br from-[#1A1D21] to-[#252830] border border-gray-700/50 rounded-2xl p-6 animate-pulse shadow-lg"
+                    >
+                      <div className="flex justify-center mb-4">
+                        <div className="w-16 h-16 bg-gray-700/50 rounded-full"></div>
+                      </div>
+                      <div className="h-5 bg-gray-700/50 rounded w-3/4 mx-auto mb-2"></div>
+                      <div className="h-3 bg-gray-700/50 rounded w-1/2 mx-auto mb-4"></div>
+                      <div className="space-y-2 mb-4">
+                        <div className="h-3 bg-gray-700/50 rounded"></div>
+                        <div className="h-3 bg-gray-700/50 rounded"></div>
+                      </div>
+                      <div className="h-10 bg-gray-700/50 rounded-lg"></div>
+                    </div>
+                  ))}
                 </div>
-                {generating && (
-                  <div className="mt-4 text-sm text-gray-400 flex items-center gap-2 animate-pulse">
-                    <div className="w-2 h-2 bg-[#5B9FED] rounded-full"></div>
-                    AI is analyzing {companyInput || "the company"}... This may
-                    take a few minutes. You can wait here or check back later.
-                  </div>
-                )}
-              </>
-            ) : (
-              <div className="text-sm text-gray-400">
-                Use the Dashboard to generate new profiles.
-              </div>
-            )}
-          </div>
+              )}
 
-          {/* Listing Area (Dashboard / Favorites / History) */}
-          <div>
-            {((activeTab === "dashboard" && loading) ||
-              (activeTab === "favorites" && favoritesLoading) ||
-              (activeTab === "history" && historyLoading)) && (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {[1, 2, 3].map((i) => (
-                  <div
-                    key={i}
-                    className="bg-[#1A1D21] border border-gray-700 rounded-2xl p-6 animate-pulse"
-                  >
-                    <div className="flex justify-center mb-4">
-                      <div className="w-16 h-16 bg-gray-700 rounded-full"></div>
-                    </div>
-                    <div className="h-5 bg-gray-700 rounded w-3/4 mx-auto mb-2"></div>
-                    <div className="h-3 bg-gray-700 rounded w-1/2 mx-auto mb-4"></div>
-                    <div className="space-y-2 mb-4">
-                      <div className="h-3 bg-gray-700 rounded"></div>
-                      <div className="h-3 bg-gray-700 rounded"></div>
-                    </div>
-                    <div className="h-10 bg-gray-700 rounded-lg"></div>
-                  </div>
-                ))}
-              </div>
-            )}
+              {!(
+                (activeTab === "dashboard" && loading) ||
+                (activeTab === "favorites" && favoritesLoading) ||
+                (activeTab === "history" && historyLoading)
+              ) &&
+                (() => {
+                  const items =
+                    activeTab === "dashboard"
+                      ? profiles
+                      : activeTab === "favorites"
+                      ? favorites
+                      : historyItems;
 
-            {!(
-              (activeTab === "dashboard" && loading) ||
-              (activeTab === "favorites" && favoritesLoading) ||
-              (activeTab === "history" && historyLoading)
-            ) &&
-              (() => {
-                const items =
-                  activeTab === "dashboard"
-                    ? profiles
-                    : activeTab === "favorites"
-                    ? favorites
-                    : historyItems;
+                  // Apply search filter
+                  const filteredItems = filterProfiles(items);
 
-                // Apply search filter
-                const filteredItems = filterProfiles(items);
+                  if (!items || items.length === 0) {
+                    return (
+                      <div className="text-center py-20">
+                        <div className="text-gray-500 mb-4 text-lg font-semibold">No items found</div>
+                        <p className="text-gray-600 text-sm">
+                          {activeTab === "dashboard" &&
+                            "Start by generating your first company profile above"}
+                          {activeTab === "favorites" &&
+                            "You have not favorited any prospects yet."}
+                          {activeTab === "history" && "No recent activity yet."}
+                        </p>
+                      </div>
+                    );
+                  }
 
-                if (!items || items.length === 0) {
-                  return (
-                    <div className="text-center py-20">
-                      <div className="text-gray-500 mb-4">No items found</div>
-                      <p className="text-gray-600 text-sm">
-                        {activeTab === "dashboard" &&
-                          "Start by generating your first company profile above"}
-                        {activeTab === "favorites" &&
-                          "You have not favorited any prospects yet."}
-                        {activeTab === "history" && "No recent activity yet."}
-                      </p>
-                    </div>
-                  );
-                }
+                  if (filteredItems.length === 0) {
+                    return (
+                      <div className="text-center py-20">
+                        <div className="text-gray-500 mb-4 text-lg font-semibold">No results found</div>
+                        <p className="text-gray-600 text-sm">
+                          No profiles match your search "{searchQuery}"
+                        </p>
+                      </div>
+                    );
+                  }
 
-                if (filteredItems.length === 0) {
-                  return (
-                    <div className="text-center py-20">
-                      <div className="text-gray-500 mb-4">No results found</div>
-                      <p className="text-gray-600 text-sm">
-                        No profiles match your search "{searchQuery}"
-                      </p>
-                    </div>
-                  );
-                }
-
-                // Render History as Table
-                if (activeTab === "history") {
-                  return (
-                    <div className="bg-[#1A1D21] border border-gray-700 rounded-2xl overflow-hidden">
-                      <div className="overflow-x-auto">
-                        <table className="w-full min-w-[800px]">
-                          <thead className="bg-[#2A2D33] border-b border-gray-700">
-                            <tr>
-                              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-300">
-                                Company Name
-                              </th>
-                              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-300">
-                                Industry
-                              </th>
-                              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-300">
-                                Location
-                              </th>
-                              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-300">
-                                Created
-                              </th>
-                              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-300">
-                                Favorite
-                              </th>
-                              <th className="px-6 py-4 text-center text-sm font-semibold text-gray-300">
-                                Actions
-                              </th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {filteredItems.map((profile) => (
-                              <tr
-                                key={profile.profile_id || profile.id}
-                                className="border-b border-gray-800 hover:bg-[#252830] transition"
-                              >
-                                <td className="px-6 py-4">
-                                  <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 bg-linear-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center shrink-0">
-                                      <span className="text-sm font-bold text-white">
-                                        {profile.company_name
-                                          ? profile.company_name
-                                              .charAt(0)
-                                              .toUpperCase()
-                                          : "U"}
+                  // History Table View
+                  if (activeTab === "history") {
+                    return (
+                      <div className="bg-gradient-to-br from-[#1D2530] to-[#2A2D33] border border-gray-700/50 rounded-2xl overflow-hidden shadow-2xl">
+                        <div className="overflow-x-auto">
+                          <table className="w-full min-w-[800px]">
+                            <thead className="bg-gradient-to-r from-[#2A2D33] to-[#353A42] border-b border-gray-700/50">
+                              <tr>
+                                <th className="px-6 py-4 text-left text-sm font-bold text-gray-300">
+                                  Company Name
+                                </th>
+                                <th className="px-6 py-4 text-left text-sm font-bold text-gray-300">
+                                  Industry
+                                </th>
+                                <th className="px-6 py-4 text-left text-sm font-bold text-gray-300">
+                                  Location
+                                </th>
+                                <th className="px-6 py-4 text-left text-sm font-bold text-gray-300">
+                                  Created
+                                </th>
+                                <th className="px-6 py-4 text-left text-sm font-bold text-gray-300">
+                                  Favorite
+                                </th>
+                                <th className="px-6 py-4 text-center text-sm font-bold text-gray-300">
+                                  Actions
+                                </th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {filteredItems.map((profile) => (
+                                <tr
+                                  key={profile.profile_id || profile.id}
+                                  className="border-b border-gray-800/50 hover:bg-[#252830]/60 transition"
+                                >
+                                  <td className="px-6 py-4">
+                                    <div className="flex items-center gap-3">
+                                      <div className="w-10 h-10 bg-gradient-to-br from-[#5B9FED] to-[#4A8FDD] rounded-full flex items-center justify-center shrink-0 shadow-lg">
+                                        <span className="text-sm font-bold text-white">
+                                          {profile.company_name
+                                            ? profile.company_name
+                                                .charAt(0)
+                                                .toUpperCase()
+                                            : "U"}
+                                        </span>
+                                      </div>
+                                      <span className="text-white font-medium">
+                                        {profile.company_name}
                                       </span>
                                     </div>
-                                    <span className="text-white font-medium">
-                                      {profile.company_name}
-                                    </span>
-                                  </div>
-                                </td>
-                                <td className="px-6 py-4 text-gray-400 text-sm">
-                                  {profile.overview?.industry || "N/A"}
-                                </td>
-                                <td className="px-6 py-4 text-gray-400 text-sm">
-                                  {profile.overview?.location || "N/A"}
-                                </td>
-                                <td className="px-6 py-4 text-gray-400 text-sm">
-                                  {profile.created_at
-                                    ? formatRelativeTime(profile.created_at)
-                                    : "N/A"}
-                                </td>
-                                <td className="px-6 py-4">
-                                  <button
-                                    onClick={(e) =>
-                                      handleToggleFavorite(profile, e)
-                                    }
-                                    disabled={
-                                      favoriteLoadingId ===
-                                        (profile.profile_id || profile.id) ||
-                                      profile.status === "processing"
-                                    }
-                                    className={`transition p-1 rounded-lg ${
-                                      profile.is_favorite
-                                        ? "text-yellow-400 hover:text-yellow-500"
-                                        : "text-gray-500 hover:text-yellow-400"
-                                    } ${
-                                      favoriteLoadingId ===
-                                        (profile.profile_id || profile.id) ||
-                                      profile.status === "processing"
-                                        ? "opacity-50 cursor-not-allowed"
-                                        : ""
-                                    }`}
-                                  >
-                                    <Star
-                                      size={18}
-                                      fill={
-                                        profile.is_favorite
-                                          ? "currentColor"
-                                          : "none"
-                                      }
-                                    />
-                                  </button>
-                                </td>
-                                <td className="px-6 py-4">
-                                  <div className="flex items-center justify-center gap-2">
+                                  </td>
+                                  <td className="px-6 py-4 text-gray-400 text-sm">
+                                    {profile.overview?.industry || "N/A"}
+                                  </td>
+                                  <td className="px-6 py-4 text-gray-400 text-sm">
+                                    {profile.overview?.location || "N/A"}
+                                  </td>
+                                  <td className="px-6 py-4 text-gray-400 text-sm">
+                                    {profile.created_at
+                                      ? formatRelativeTime(profile.created_at)
+                                      : "N/A"}
+                                  </td>
+                                  <td className="px-6 py-4">
                                     <button
-                                      onClick={() => viewDetails(profile)}
-                                      disabled={profile.status === "processing"}
-                                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition text-white ${
+                                      onClick={(e) =>
+                                        handleToggleFavorite(profile, e)
+                                      }
+                                      disabled={
+                                        favoriteLoadingId ===
+                                          (profile.profile_id || profile.id) ||
                                         profile.status === "processing"
-                                          ? "bg-gray-700 cursor-not-allowed opacity-70"
-                                          : "bg-[#5B9FED] hover:bg-[#4A8DD9]"
+                                      }
+                                      className={`transition p-1 rounded-lg ${
+                                        profile.is_favorite
+                                          ? "text-yellow-400 hover:text-yellow-300"
+                                          : "text-gray-500 hover:text-yellow-400"
+                                      } ${
+                                        favoriteLoadingId ===
+                                          (profile.profile_id || profile.id) ||
+                                        profile.status === "processing"
+                                          ? "opacity-50 cursor-not-allowed"
+                                          : ""
                                       }`}
                                     >
-                                      {profile.status === "processing"
-                                        ? "Processing..."
-                                        : "View Details"}
+                                      <Star
+                                        size={18}
+                                        fill={
+                                          profile.is_favorite
+                                            ? "currentColor"
+                                            : "none"
+                                        }
+                                      />
+                                    </button>
+                                  </td>
+                                  <td className="px-6 py-4">
+                                    <div className="flex items-center justify-center gap-2">
+                                      <button
+                                        onClick={() => viewDetails(profile)}
+                                        disabled={profile.status === "processing"}
+                                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition text-white ${
+                                          profile.status === "processing"
+                                            ? "bg-gray-700 cursor-not-allowed opacity-70"
+                                            : "bg-gradient-to-r from-[#5B9FED] to-[#4A8FDD] hover:from-[#4A8FDD] hover:to-[#3A7FCD]"
+                                        }`}
+                                      >
+                                        {profile.status === "processing"
+                                          ? "Processing..."
+                                          : "View Details"}
                                     </button>
                                     <div className="relative">
                                       <button
@@ -1159,19 +1324,19 @@ export default function Dashboard() {
                                         className={`text-gray-500 transition p-1 rounded-lg ${
                                           profile.status === "processing"
                                             ? "opacity-50 cursor-not-allowed"
-                                            : "hover:text-white hover:bg-gray-800"
+                                            : "hover:text-white hover:bg-gray-800/50"
                                         }`}
                                       >
                                         <MoreVertical size={18} />
                                       </button>
                                       {openDropdownId ===
                                         (profile.profile_id || profile.id) && (
-                                        <div className="absolute right-0 mt-2 w-40 bg-[#2A2D33] border border-gray-700 rounded-lg shadow-lg z-10">
+                                        <div className="absolute right-0 mt-2 w-40 bg-[#2A2D33] border border-gray-700/50 rounded-lg shadow-lg z-10">
                                           <button
                                             onClick={(e) =>
                                               handleDeleteClick(profile, e)
                                             }
-                                            className="w-full px-4 py-2 text-left text-red-400 hover:bg-gray-800 rounded-lg flex items-center gap-2 transition"
+                                            className="w-full px-4 py-2 text-left text-red-400 hover:bg-gray-800/50 rounded-lg flex items-center gap-2 transition"
                                           >
                                             <Trash2 size={16} />
                                             Delete
@@ -1190,15 +1355,15 @@ export default function Dashboard() {
                   );
                 }
 
-                // Render Dashboard and Favorites as Cards
+                // Cards Grid View
                 return (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {filteredItems.slice(0, 6).map((profile) => (
+                    {filteredItems.map((profile) => (
                       <div
                         key={profile.profile_id || profile.id}
-                        className="bg-[#1A1D21] border border-gray-700 rounded-2xl p-6 hover:border-[#5B9FED] transition-all relative"
+                        className="bg-gradient-to-br from-[#1A1D21] via-[#1F2229] to-[#252830] border border-gray-700/50 rounded-2xl p-6 hover:border-[#5B9FED]/50 hover:shadow-2xl hover:shadow-[#5B9FED]/10 transition-all duration-300 relative group"
                       >
-                        {/* Favorite Button - Top Left */}
+                        {/* Favorite Button */}
                         <div className="absolute top-4 left-4">
                           <button
                             onClick={(e) => handleToggleFavorite(profile, e)}
@@ -1207,9 +1372,9 @@ export default function Dashboard() {
                                 (profile.profile_id || profile.id) ||
                               profile.status === "processing"
                             }
-                            className={`transition p-1 rounded-lg ${
+                            className={`transition p-2 rounded-lg ${
                               profile.is_favorite
-                                ? "text-yellow-400 hover:text-yellow-500"
+                                ? "text-yellow-400 hover:text-yellow-300"
                                 : "text-gray-500 hover:text-yellow-400"
                             } ${
                               favoriteLoadingId ===
@@ -1228,7 +1393,7 @@ export default function Dashboard() {
                           </button>
                         </div>
 
-                        {/* Dropdown Menu Button - Top Right */}
+                        {/* Dropdown Menu */}
                         <div className="absolute top-4 right-4">
                           <button
                             onClick={(e) =>
@@ -1238,22 +1403,21 @@ export default function Dashboard() {
                               )
                             }
                             disabled={profile.status === "processing"}
-                            className={`text-gray-500 transition p-1 rounded-lg ${
+                            className={`text-gray-500 transition p-2 rounded-lg ${
                               profile.status === "processing"
                                 ? "opacity-50 cursor-not-allowed"
-                                : "hover:text-white hover:bg-gray-800"
+                                : "hover:text-white hover:bg-gray-800/50"
                             }`}
                           >
                             <MoreVertical size={20} />
                           </button>
 
-                          {/* Dropdown Menu */}
                           {openDropdownId ===
                             (profile.profile_id || profile.id) && (
-                            <div className="absolute right-0 mt-2 w-40 bg-[#2A2D33] border border-gray-700 rounded-lg shadow-lg z-10">
+                            <div className="absolute right-0 mt-2 w-40 bg-[#2A2D33] border border-gray-700/50 rounded-lg shadow-lg z-10">
                               <button
                                 onClick={(e) => handleDeleteClick(profile, e)}
-                                className="w-full px-4 py-2 text-left text-red-400 hover:bg-gray-800 rounded-lg flex items-center gap-2 transition"
+                                className="w-full px-4 py-2 text-left text-red-400 hover:bg-gray-800/50 rounded-lg flex items-center gap-2 transition"
                               >
                                 <Trash2 size={16} />
                                 Delete
@@ -1262,8 +1426,9 @@ export default function Dashboard() {
                           )}
                         </div>
 
+                        {/* Avatar */}
                         <div className="flex justify-center mb-4">
-                          <div className="w-16 h-16 bg-linear-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center">
+                          <div className="w-16 h-16 bg-gradient-to-br from-[#5B9FED] to-[#4A8FDD] rounded-full flex items-center justify-center shadow-lg shadow-[#5B9FED]/30 group-hover:shadow-[#5B9FED]/50 transition-shadow">
                             <span className="text-2xl font-bold text-white">
                               {profile.company_name
                                 ? profile.company_name.charAt(0).toUpperCase()
@@ -1272,10 +1437,12 @@ export default function Dashboard() {
                           </div>
                         </div>
 
-                        <h3 className="text-center text-lg font-semibold mb-1">
+                        {/* Title */}
+                        <h3 className="text-center text-lg font-bold mb-1">
                           {profile.company_name}
                         </h3>
 
+                        {/* Date */}
                         <p className="text-center text-xs text-gray-500 mb-4">
                           {profile.created_at
                             ? `Created: ${formatRelativeTime(
@@ -1284,11 +1451,12 @@ export default function Dashboard() {
                             : ""}
                         </p>
 
+                        {/* Summary */}
                         {profile.status === "processing" ? (
                           <div className="w-full px-4 mb-5 h-[60px] flex flex-col justify-center gap-2 animate-pulse">
-                            <div className="h-2 bg-gray-700 rounded-full w-full"></div>
-                            <div className="h-2 bg-gray-700 rounded-full w-2/3 mx-auto"></div>
-                            <div className="h-2 bg-gray-700 rounded-full w-1/2 mx-auto"></div>
+                            <div className="h-2 bg-gray-700/50 rounded-full w-full"></div>
+                            <div className="h-2 bg-gray-700/50 rounded-full w-2/3 mx-auto"></div>
+                            <div className="h-2 bg-gray-700/50 rounded-full w-1/2 mx-auto"></div>
                           </div>
                         ) : (
                           <p className="text-sm text-gray-400 mb-5 line-clamp-3 text-center h-[60px]">
@@ -1297,6 +1465,7 @@ export default function Dashboard() {
                           </p>
                         )}
 
+                        {/* View Details Button */}
                         <button
                           onClick={() => viewDetails(profile)}
                           disabled={
@@ -1304,12 +1473,12 @@ export default function Dashboard() {
                               (profile.profile_id || profile.id) ||
                             profile.status === "processing"
                           }
-                          className={`w-full px-4 py-2.5 rounded-lg font-medium transition flex items-center justify-center gap-2 ${
+                          className={`w-full px-4 py-2.5 rounded-lg font-bold transition flex items-center justify-center gap-2 ${
                             viewLoadingId ===
                               (profile.profile_id || profile.id) ||
                             profile.status === "processing"
                               ? "bg-gray-800/50 border border-gray-700 cursor-not-allowed text-gray-500"
-                              : "bg-[#4A5568] hover:bg-[#5A6578] text-white"
+                              : "bg-gradient-to-r from-[#4A5568] to-[#5A6578] hover:from-[#5A6578] hover:to-[#6A7588] text-white shadow-lg"
                           }`}
                         >
                           {viewLoadingId ===
@@ -1350,6 +1519,7 @@ export default function Dashboard() {
                   </div>
                 );
               })()}
+            </div>
           </div>
         </div>
       </main>
