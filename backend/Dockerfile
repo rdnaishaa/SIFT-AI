@@ -24,5 +24,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # 6. Jalankan aplikasi
-# Menggunakan host 0.0.0.0 agar bisa diakses dari luar container
-CMD ["uvicorn", "FastAPI.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Menggunakan sh -c agar variable $PORT dari Railway terbaca
+CMD sh -c "uvicorn FastAPI.main:app --host 0.0.0.0 --port ${PORT:-8000}"

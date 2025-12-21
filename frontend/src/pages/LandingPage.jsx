@@ -135,7 +135,7 @@ export default function LandingPage() {
         {/* Background Gradient Image */}
         <div className="absolute inset-0 bg-[#1a2332]">
           <img
-            src="/src/assets/gradient.png"
+            src="gradient.png"
             alt="background"
             className="w-full h-full object-fill  opacity-100"
           />
@@ -258,7 +258,7 @@ export default function LandingPage() {
                     transitionDuration={800}
                   >
                     <img
-                      src="/src/assets/triangle.svg"
+                      src="triangle.svg"
                       alt="decorative"
                       className="w-full h-full opacity-50"
                     />
@@ -280,7 +280,7 @@ export default function LandingPage() {
                     transitionDuration={800}
                   >
                     <img
-                      src="/src/assets/equal.svg"
+                      src="equal.svg"
                       alt="decorative"
                       className="w-full h-full opacity-50"
                     />
@@ -438,11 +438,7 @@ export default function LandingPage() {
                 />
                 {steps[currentStep].showArrow && (
                   <div className="absolute bottom-0 right-0 translate-x-4 md:translate-x-10 translate-y-12 md:translate-y-24 z-10 hidden md:block">
-                    <img
-                      src="/src/assets/arrow.svg"
-                      alt="Arrow"
-                      className="rounded-lg"
-                    />
+                    <img src="arrow.svg" alt="Arrow" className="rounded-lg" />
                   </div>
                 )}
               </div>
