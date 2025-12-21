@@ -54,8 +54,8 @@ async def shutdown():
 origins = [
     "http://localhost",
     "http://localhost:5173",
-    "https://sift-ai-pink.vercel.app", # Domain Frontend Vercel kamu
-    "*" # Opsional: Izinkan semua domain (untuk testing)
+    "https://sift-ai-pink.vercel.app",
+    "https://www.sift-ai-pink.vercel.app",
 ]
 
 app.add_middleware(
