@@ -5,14 +5,22 @@ from browser_use import Agent, ChatGoogle, Browser
 from fastapi import HTTPException
 from .schemas import CompanyProfile 
 
+import os
+
 # Inisialisasi LLM
 llm = ChatGoogle(model="gemini-flash-latest")
 
-browser = Browser(
-    executable_path='C:\\Users\\esun\\AppData\\Local\\Google\\Chrome\\Application\\chrome.exe',
-    # user_data_dir='C:\\Users\\esun\\AppData\\Local\\Google\\Chrome\\User Data',
-)
+# Setup Browser agar fleksibel (Bisa jalan di Windows Local & Render Linux)
+chrome_path = os.getenv("CHROME_PATH") # Di Render nanti kita set ini, di local biarkan kosong
+browser = None
 
+if chrome_path:
+    # Jika di Render/Linux dengan env var
+    browser = Browser(executable_path=chrome_path)
+else:
+    # Jika di Local (biarkan library cari default atau gunakan config manual jika perlu)
+    # browser = Browser(executable_path='C:\\Path\\To\\Chrome.exe')
+    pass 
 
 async def run_sift_agent_with_streaming(company_name: str):
     """
@@ -91,7 +99,7 @@ async def run_sift_agent_with_streaming(company_name: str):
         browser=browser,
         output_model_schema=CompanyProfile,
         max_steps=50,
-        use_vision="false"
+        use_vision=False
     )
     
     # Capture stdout untuk mendapatkan agent logs
@@ -219,7 +227,7 @@ async def run_sift_agent(company_name: str) -> CompanyProfile:
         browser=browser,
         output_model_schema=CompanyProfile,
         max_steps=50,
-        use_vision="false"
+        use_vision=False
     )
     
 
