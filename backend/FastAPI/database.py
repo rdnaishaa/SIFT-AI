@@ -14,6 +14,10 @@ class Database:
     async def connect(self):
         """Membuat connection pool ke database"""
         if not self.pool:
+            if not DATABASE_URL:
+                raise Exception("DATABASE_URL environment variable is not set")
+            
+            print(f"📡 Connecting to database...")
             self.pool = await asyncpg.create_pool(
                 DATABASE_URL,
                 min_size=5,

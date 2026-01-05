@@ -31,25 +31,35 @@ app = FastAPI(
 @app.on_event("startup")
 async def startup():
     """Connect ke database saat aplikasi start"""
-    await db.connect()
-    
-    # Ensure status and error_message columns exist
     try:
-        await db.execute("""
-            ALTER TABLE company_profiles 
-            ADD COLUMN IF NOT EXISTS status VARCHAR(50) DEFAULT 'completed';
-        """)
-        await db.execute("""
-            ALTER TABLE company_profiles 
-            ADD COLUMN IF NOT EXISTS error_message TEXT;
-        """)
+        await db.connect()
+        print("✅ Database connected successfully")
+        
+        # Ensure status and error_message columns exist
+        try:
+            await db.execute("""
+                ALTER TABLE company_profiles 
+                ADD COLUMN IF NOT EXISTS status VARCHAR(50) DEFAULT 'completed';
+            """)
+            await db.execute("""
+                ALTER TABLE company_profiles 
+                ADD COLUMN IF NOT EXISTS error_message TEXT;
+            """)
+            print("✅ Database schema updated")
+        except Exception as e:
+            print(f"⚠️ Warning: Could not alter table: {e}")
     except Exception as e:
-        print(f"Warning: Could not alter table: {e}")
+        print(f"❌ ERROR: Failed to connect to database: {e}")
+        print(f"⚠️ Application will start but database operations will fail")
+        print(f"⚠️ Please check DATABASE_URL environment variable")
 
 @app.on_event("shutdown")
 async def shutdown():
     """Disconnect dari database saat aplikasi shutdown"""
-    await db.disconnect()
+    try:
+        await db.disconnect()
+    except Exception as e:
+        print(f"Warning during shutdown: {e}")
 
 origins = [
     "http://localhost",
@@ -78,7 +88,17 @@ class ProfileRequest(BaseModel):
 @app.get("/")
 def read_root():
     """Endpoint root untuk mengecek apakah API berjalan."""
-    return {"message": "SIFT API is running. Go to /docs for API documentation."}
+    db_status = "connected" if db.pool else "disconnected"
+    return {
+        "message": "SIFT API is running. Go to /docs for API documentation.",
+        "status": "healthy",
+        "database": db_status
+    }
+
+@app.get("/health")
+def health_check():
+    """Simple health check endpoint untuk Railway"""
+    return {"status": "ok"}
 
 
 @app.post("/generate-profile", response_model=CompanyProfile)

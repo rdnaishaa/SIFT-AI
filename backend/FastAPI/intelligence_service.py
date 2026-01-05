@@ -5,15 +5,15 @@ import os
 import json
 import httpx
 from typing import List, Dict
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 from dotenv import load_dotenv
 from .intelligence_models import PainPoint, CompanyIntelligence
 
 load_dotenv()
 
-# Initialize Gemini client
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-model = genai.GenerativeModel('gemini-2.5-flash-lite')  
+# Initialize Gemini client with new API
+client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))  
 
 async def generate_company_intelligence(
     company_name: str,
@@ -113,10 +113,11 @@ IMPORTANT:
 """
 
     try:
-        # Call Gemini API
-        response = model.generate_content(
-            prompt,
-            generation_config=genai.types.GenerationConfig(
+        # Call Gemini API with new client
+        response = client.models.generate_content(
+            model='gemini-2.0-flash-exp',
+            contents=prompt,
+            config=types.GenerateContentConfig(
                 temperature=0.7,
                 response_mime_type="application/json"
             )
@@ -183,8 +184,15 @@ USER QUESTION:
 """
 
     try:
-        # Menggunakan Gemini untuk streaming response
-        response = model.generate_content(system_prompt, stream=True)
+        # Menggunakan Gemini untuk streaming response dengan API baru
+        response = client.models.generate_content_stream(
+            model='gemini-2.0-flash-exp',
+            contents=system_prompt,
+            config=types.GenerateContentConfig(
+                temperature=0.7
+            )
+        )
+        
         for chunk in response:
             if chunk.text:
                 yield chunk.text
