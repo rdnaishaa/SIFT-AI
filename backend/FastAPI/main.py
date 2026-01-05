@@ -1,25 +1,54 @@
 import asyncio
 import sys
+import traceback
 
 if sys.platform == 'win32':
     from asyncio import WindowsProactorEventLoopPolicy
     asyncio.set_event_loop_policy(WindowsProactorEventLoopPolicy())
 
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, JSONResponse
 from pydantic import BaseModel, Field
 from dotenv import load_dotenv
-
 from fastapi.middleware.cors import CORSMiddleware
 
-from AgentScraper.schemas import CompanyProfile
-from AgentScraper.profiler import run_sift_agent
-from .database import db
-from .users import router as auth_router
-from .profiles import router as profiles_router
-from .intelligence_service import chat_with_profile_context_stream
-
 load_dotenv()
+
+print("🚀 Starting SIFT API...")
+print("📦 Loading modules...")
+
+# Import with error handling
+try:
+    from AgentScraper.schemas import CompanyProfile
+    from AgentScraper.profiler import run_sift_agent
+    print("✅ AgentScraper loaded")
+except Exception as e:
+    print(f"⚠️ Warning: Could not load AgentScraper: {e}")
+    CompanyProfile = None
+    run_sift_agent = None
+
+try:
+    from .database import db
+    print("✅ Database module loaded")
+except Exception as e:
+    print(f"⚠️ Warning: Could not load database: {e}")
+    db = None
+
+try:
+    from .users import router as auth_router
+    from .profiles import router as profiles_router
+    print("✅ Routers loaded")
+except Exception as e:
+    print(f"⚠️ Warning: Could not load routers: {e}")
+    auth_router = None
+    profiles_router = None
+
+try:
+    from .intelligence_service import chat_with_profile_context_stream
+    print("✅ Intelligence service loaded")
+except Exception as e:
+    print(f"⚠️ Warning: Could not load intelligence service: {e}")
+    chat_with_profile_context_stream = None
 
 app = FastAPI(
     title="SIFT API",
@@ -31,7 +60,14 @@ app = FastAPI(
 @app.on_event("startup")
 async def startup():
     """Connect ke database saat aplikasi start"""
+    print("🔧 Running startup tasks...")
+    
+    if db is None:
+        print("⚠️ Database module not loaded, skipping database connection")
+        return
+    
     try:
+        print("📡 Attempting database connection...")
         await db.connect()
         print("✅ Database connected successfully")
         
@@ -52,6 +88,9 @@ async def startup():
         print(f"❌ ERROR: Failed to connect to database: {e}")
         print(f"⚠️ Application will start but database operations will fail")
         print(f"⚠️ Please check DATABASE_URL environment variable")
+        traceback.print_exc()
+    
+    print("✅ Startup complete!")
 
 @app.on_event("shutdown")
 async def shutdown():
@@ -77,10 +116,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include authentication router
-app.include_router(auth_router)
-# Include profiles router (protected routes)
-app.include_router(profiles_router)
+# Include routers if loaded successfully
+if auth_router:
+    app.include_router(auth_router)
+    print("✅ Auth router registered")
+if profiles_router:
+    app.include_router(profiles_router)
+    print("✅ Profiles router registered")
 
 class ProfileRequest(BaseModel):
     company_name: str = Field(..., example="PT Gojek Tokopedia")
@@ -88,17 +130,26 @@ class ProfileRequest(BaseModel):
 @app.get("/")
 def read_root():
     """Endpoint root untuk mengecek apakah API berjalan."""
-    db_status = "connected" if db.pool else "disconnected"
+    db_status = "not_loaded"
+    if db:
+        db_status = "connected" if db.pool else "disconnected"
+    
     return {
         "message": "SIFT API is running. Go to /docs for API documentation.",
         "status": "healthy",
-        "database": db_status
+        "database": db_status,
+        "modules": {
+            "database": db is not None,
+            "scraper": run_sift_agent is not None,
+            "auth": auth_router is not None,
+            "intelligence": chat_with_profile_context_stream is not None
+        }
     }
 
 @app.get("/health")
 def health_check():
     """Simple health check endpoint untuk Railway"""
-    return {"status": "ok"}
+    return {"status": "ok", "service": "SIFT-AI"}
 
 
 @app.post("/generate-profile", response_model=CompanyProfile)
