@@ -11,16 +11,19 @@ import os
 llm = ChatGoogle(model="gemini-flash-latest")
 
 # Setup Browser agar fleksibel (Bisa jalan di Windows Local & Render Linux)
-chrome_path = os.getenv("CHROME_PATH") # Di Render nanti kita set ini, di local biarkan kosong
-browser = None
+_browser_instance = None
 
-if chrome_path:
-    # Jika di Render/Linux dengan env var
-    browser = Browser(executable_path=chrome_path)
-else:
-    # Jika di Local (biarkan library cari default atau gunakan config manual jika perlu)
-    # browser = Browser(executable_path='C:\\Path\\To\\Chrome.exe')
-    pass 
+def get_browser():
+    global _browser_instance
+    if _browser_instance is None:
+        chrome_path = os.getenv("CHROME_PATH")
+        if chrome_path:
+            print(f"Initializing Browser with path: {chrome_path}")
+            _browser_instance = Browser(executable_path=chrome_path)
+        else:
+            print("Initializing Browser with default path")
+            _browser_instance = Browser()
+    return _browser_instance 
 
 async def run_sift_agent_with_streaming(company_name: str):
     """
@@ -96,7 +99,7 @@ async def run_sift_agent_with_streaming(company_name: str):
     agent = Agent(
         task=task_prompt,
         llm=llm,
-        browser=browser,
+        browser=get_browser(),
         output_model_schema=CompanyProfile,
         max_steps=50,
         use_vision=False
@@ -224,7 +227,7 @@ async def run_sift_agent(company_name: str) -> CompanyProfile:
     agent = Agent(
         task=task_prompt,
         llm=llm,
-        browser=browser,
+        browser=get_browser(),
         output_model_schema=CompanyProfile,
         max_steps=50,
         use_vision=False
